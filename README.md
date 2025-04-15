@@ -17,6 +17,14 @@ If you have memory issues when attempting to run, setting the stack size to be u
 ulimit -s unlimited
 ```
 
+### Info regarding signing benchmarks:
+
+* Signing corresponds to the benchmark table like this:
+* as_sign_1 - S1
+* just_enc__real_step_2 - S2
+* as_sign_2 - S3
+* as_sign_3 - Comb
+
 
 # Dilithium
 

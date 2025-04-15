@@ -568,6 +568,14 @@ void as_keygen_2(
     free(y);
 }
 
+
+// Signing corresponds to the benchmark table like this:
+// as_sign_1 - S1
+// just_enc__real_step_2 - S2
+// as_sign_2 - S3
+// as_sign_3 - Comb
+
+// This is as_sign_2 in reality, but with just the encryption step in the benchmark.
 void as_sign_1(
     poly (*As)[L],    // [K][L]
     poly (*Ae)[LHAT], // [KHAT][LHAT]
@@ -629,6 +637,36 @@ void as_sign_1(
     poly_1d_clear(w, K);
     free(r);
     free(w);
+}
+
+void just_enc__real_step_2(
+    poly (*As)[L],    // [K][L]
+    poly (*Ae)[LHAT], // [KHAT][LHAT]
+    poly (*Be)[M],    // [KHAT][M]
+    ctx_t ctx_r)      // ctx_si.u [LHAT], ctx_si.v [M]
+{
+    // Allocate r ∈ poly[M] and w ∈ poly[K]
+    poly *r = malloc(sizeof(poly[M]));
+    poly_1d_init(r, M);
+
+    // Sample r for first L slots, pad with 0s for M-L
+    for (int i = 0; i < L; i++)
+    {
+        gaussian_sampler_w(r[i].coeffs, N);
+        poly_reduce(&r[i]);
+        poly_ntt(&r[i]);
+    }
+    for (int i = L; i < M; i++)
+    {
+        poly_ntt(&r[i]); // Still transform to NTT domain
+    }
+
+    // Encrypt r under Ae, Be
+    encrypt_1d(ctx_r.u, ctx_r.v, Ae, Be, r);
+
+    // Cleanup
+    poly_1d_clear(r, M);
+    free(r);
 }
 
 void as_sign_2(
