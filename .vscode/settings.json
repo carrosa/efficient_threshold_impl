@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.sage": "python",
+        "ghkss256.h": "c",
+        "symmetric.h": "c",
+        "randombytes.h": "c",
+        "poly256.h": "c",
+        "gaussian_ref.h": "c",
+        "gmp.h": "c",
+        "stdint.h": "c",
+        "x86intrin.h": "c",
+        "algorithm": "c"
+    }
+}
