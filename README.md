@@ -1,9 +1,8 @@
 # Threshold Lattice Signatures with DKG and Identifiable Abort
 
 ## Build instructions
-
 ```
-make ghkss && ./test/ghkss256
+cd ref && make ghkss && ./test/ghkss256
 ```
 
 ### Prerquisites
