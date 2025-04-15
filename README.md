@@ -5,6 +5,15 @@
 cd ref && make ghkss && ./test/ghkss256
 ```
 
+## Threshold instructions
+Update the
+
+```
+#define THRESHOLD
+```
+
+variable in ref/params.h to change benchmarking threshold.
+
 ### Prerquisites
 Our implementation is built on top of Dilithium, so we share prerequisites, in addition to GMP.
 
@@ -23,6 +32,9 @@ ulimit -s unlimited
 * just_enc__real_step_2 - S2
 * as_sign_2 - S3
 * as_sign_3 - Comb
+
+
+just_enc__real_step_2 can be ran in place of as_sign_1 for benchmarking S1
 
 
 # Dilithium
