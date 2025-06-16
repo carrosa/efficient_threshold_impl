@@ -1,0 +1,182 @@
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer -z noexecstack -DKYBER_K=2 kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c fips202.c symmetric-shake.c randombytes.c test/test_kyber.c -o test/test_kyber512
+indcpa.c:198:6: warning: no previous prototype for ‘print_buffer’ [-Wmissing-prototypes]
+  198 | void print_buffer(uint8_t *buf, size_t length)
+      |      ^~~~~~~~~~~~
+indcpa.c:209:6: warning: no previous prototype for ‘gen_matrix_c’ [-Wmissing-prototypes]
+  209 | void gen_matrix_c(poly A[MAT_m][MAT_m], const uint8_t seed[MAT_COINS], int transposed)
+      |      ^~~~~~~~~~~~
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+indcpa.c:513:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  513 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c: In function ‘indcpa_mat_tdec’:
+indcpa.c:720:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  720 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c:714:167: warning: unused parameter ‘coins’ [-Wunused-parameter]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |                                                                                                                                                         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+indcpa.c: At top level:
+indcpa.c:765:13: warning: ‘indcpa_mat_comb’ defined but not used [-Wunused-function]
+  765 | static void indcpa_mat_comb() {}
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:714:13: warning: ‘indcpa_mat_tdec’ defined but not used [-Wunused-function]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:420:16: warning: ‘poly_matrix_inf_norm’ defined but not used [-Wunused-function]
+  420 | static int16_t poly_matrix_inf_norm(poly **matrix, int rows, int cols)
+      |                ^~~~~~~~~~~~~~~~~~~~
+indcpa.c:391:15: warning: ‘poly_matrix_l2_norm_sq’ defined but not used [-Wunused-function]
+  391 | static double poly_matrix_l2_norm_sq(poly **matrix, int rows, int cols)
+      |               ^~~~~~~~~~~~~~~~~~~~~~
+In file included from indcpa.c:6:
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+params.h:10:28: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+indcpa.c:525:7: note: in expansion of macro ‘poly_getnoise_eta1’
+  525 |       poly_getnoise_eta1(&R[i][j], noiseseed, nonce++);
+      |       ^~~~~~~~~~~~~~~~~~
+params.h:10:28: note: by argument 2 of type ‘const uint8_t[32]’ {aka ‘const unsigned char[32]’} to ‘pqcrystals_kyber512_ref_poly_getnoise_eta1’ declared here
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+poly.h:32:6: note: in expansion of macro ‘poly_getnoise_eta1’
+   32 | void poly_getnoise_eta1(poly *r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce);
+      |      ^~~~~~~~~~~~~~~~~~
+indcpa.c:512:11: note: ‘buf’ declared here
+  512 |   uint8_t buf[2 * MAT_COINS];
+      |           ^~~
+test/test_kyber.c:197:13: warning: ‘print_message’ defined but not used [-Wunused-function]
+  197 | static void print_message(const uint8_t msg[KYBER_SYMBYTES])
+      |             ^~~~~~~~~~~~~
+test/test_kyber.c:141:13: warning: ‘print_matrix_lxk’ defined but not used [-Wunused-function]
+  141 | static void print_matrix_lxk(poly A[MAT_l][MAT_k], unsigned int coeff_count, char var)
+      |             ^~~~~~~~~~~~~~~~
+test/test_kyber.c:122:13: warning: ‘print_matrix_mxl’ defined but not used [-Wunused-function]
+  122 | static void print_matrix_mxl(poly A[MAT_m][MAT_l], unsigned int coeff_count, char var)
+      |             ^~~~~~~~~~~~~~~~
+test/test_kyber.c:103:13: warning: ‘print_matrix_mxm’ defined but not used [-Wunused-function]
+  103 | static void print_matrix_mxm(poly A[MAT_m][MAT_m], unsigned int coeff_count, char var)
+      |             ^~~~~~~~~~~~~~~~
+test/test_kyber.c:66:12: warning: ‘test_invalid_ciphertext’ defined but not used [-Wunused-function]
+   66 | static int test_invalid_ciphertext(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~
+test/test_kyber.c:37:12: warning: ‘test_invalid_sk_a’ defined but not used [-Wunused-function]
+   37 | static int test_invalid_sk_a(void)
+      |            ^~~~~~~~~~~~~~~~~
+test/test_kyber.c:11:12: warning: ‘test_keys’ defined but not used [-Wunused-function]
+   11 | static int test_keys(void)
+      |            ^~~~~~~~~
+cc -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer -z noexecstack -DKYBER_K=2 kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c fips202.c symmetric-shake.c randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o test/test_speed512
+indcpa.c:198:6: warning: no previous prototype for ‘print_buffer’ [-Wmissing-prototypes]
+  198 | void print_buffer(uint8_t *buf, size_t length)
+      |      ^~~~~~~~~~~~
+indcpa.c:209:6: warning: no previous prototype for ‘gen_matrix_c’ [-Wmissing-prototypes]
+  209 | void gen_matrix_c(poly A[MAT_m][MAT_m], const uint8_t seed[MAT_COINS], int transposed)
+      |      ^~~~~~~~~~~~
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+indcpa.c:513:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  513 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c: In function ‘indcpa_mat_tdec’:
+indcpa.c:720:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  720 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c:714:167: warning: unused parameter ‘coins’ [-Wunused-parameter]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |                                                                                                                                                         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+indcpa.c: At top level:
+indcpa.c:765:13: warning: ‘indcpa_mat_comb’ defined but not used [-Wunused-function]
+  765 | static void indcpa_mat_comb() {}
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:714:13: warning: ‘indcpa_mat_tdec’ defined but not used [-Wunused-function]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:420:16: warning: ‘poly_matrix_inf_norm’ defined but not used [-Wunused-function]
+  420 | static int16_t poly_matrix_inf_norm(poly **matrix, int rows, int cols)
+      |                ^~~~~~~~~~~~~~~~~~~~
+indcpa.c:391:15: warning: ‘poly_matrix_l2_norm_sq’ defined but not used [-Wunused-function]
+  391 | static double poly_matrix_l2_norm_sq(poly **matrix, int rows, int cols)
+      |               ^~~~~~~~~~~~~~~~~~~~~~
+In file included from indcpa.c:6:
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+params.h:10:28: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+indcpa.c:525:7: note: in expansion of macro ‘poly_getnoise_eta1’
+  525 |       poly_getnoise_eta1(&R[i][j], noiseseed, nonce++);
+      |       ^~~~~~~~~~~~~~~~~~
+params.h:10:28: note: by argument 2 of type ‘const uint8_t[32]’ {aka ‘const unsigned char[32]’} to ‘pqcrystals_kyber512_ref_poly_getnoise_eta1’ declared here
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+poly.h:32:6: note: in expansion of macro ‘poly_getnoise_eta1’
+   32 | void poly_getnoise_eta1(poly *r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce);
+      |      ^~~~~~~~~~~~~~~~~~
+indcpa.c:512:11: note: ‘buf’ declared here
+  512 |   uint8_t buf[2 * MAT_COINS];
+      |           ^~~
+mkdir -p lib
+cc -shared -fPIC -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer -z noexecstack -DKYBER_K=2 kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c symmetric-shake.c -o lib/libpqcrystals_kyber512_ref.so
+indcpa.c:198:6: warning: no previous prototype for ‘print_buffer’ [-Wmissing-prototypes]
+  198 | void print_buffer(uint8_t *buf, size_t length)
+      |      ^~~~~~~~~~~~
+indcpa.c:209:6: warning: no previous prototype for ‘gen_matrix_c’ [-Wmissing-prototypes]
+  209 | void gen_matrix_c(poly A[MAT_m][MAT_m], const uint8_t seed[MAT_COINS], int transposed)
+      |      ^~~~~~~~~~~~
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+indcpa.c:513:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  513 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c: In function ‘indcpa_mat_tdec’:
+indcpa.c:720:18: warning: unused variable ‘pubseed’ [-Wunused-variable]
+  720 |   const uint8_t *pubseed = buf;
+      |                  ^~~~~~~
+indcpa.c:714:167: warning: unused parameter ‘coins’ [-Wunused-parameter]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |                                                                                                                                                         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+indcpa.c: At top level:
+indcpa.c:765:13: warning: ‘indcpa_mat_comb’ defined but not used [-Wunused-function]
+  765 | static void indcpa_mat_comb() {}
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:714:13: warning: ‘indcpa_mat_tdec’ defined but not used [-Wunused-function]
+  714 | static void indcpa_mat_tdec(poly M[MAT_l][MAT_k], poly S[MAT_m][MAT_l], poly U[MAT_m][MAT_k], const int16_t user, const int16_t *users, const size_t t, const uint8_t coins[MAT_COINS])
+      |             ^~~~~~~~~~~~~~~
+indcpa.c:420:16: warning: ‘poly_matrix_inf_norm’ defined but not used [-Wunused-function]
+  420 | static int16_t poly_matrix_inf_norm(poly **matrix, int rows, int cols)
+      |                ^~~~~~~~~~~~~~~~~~~~
+indcpa.c:391:15: warning: ‘poly_matrix_l2_norm_sq’ defined but not used [-Wunused-function]
+  391 | static double poly_matrix_l2_norm_sq(poly **matrix, int rows, int cols)
+      |               ^~~~~~~~~~~~~~~~~~~~~~
+In file included from indcpa.c:6:
+indcpa.c: In function ‘pqcrystals_kyber512_ref_indcpa_mat_enc’:
+params.h:10:28: warning: ‘buf’ may be used uninitialized [-Wmaybe-uninitialized]
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+indcpa.c:525:7: note: in expansion of macro ‘poly_getnoise_eta1’
+  525 |       poly_getnoise_eta1(&R[i][j], noiseseed, nonce++);
+      |       ^~~~~~~~~~~~~~~~~~
+params.h:10:28: note: by argument 2 of type ‘const uint8_t[32]’ {aka ‘const unsigned char[32]’} to ‘pqcrystals_kyber512_ref_poly_getnoise_eta1’ declared here
+   10 | #define KYBER_NAMESPACE(s) pqcrystals_kyber512_ref_##s
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~
+poly.h:31:28: note: in expansion of macro ‘KYBER_NAMESPACE’
+   31 | #define poly_getnoise_eta1 KYBER_NAMESPACE(poly_getnoise_eta1)
+      |                            ^~~~~~~~~~~~~~~
+poly.h:32:6: note: in expansion of macro ‘poly_getnoise_eta1’
+   32 | void poly_getnoise_eta1(poly *r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce);
+      |      ^~~~~~~~~~~~~~~~~~
+indcpa.c:512:11: note: ‘buf’ declared here
+  512 |   uint8_t buf[2 * MAT_COINS];
+      |           ^~~
+cc -Wno-unused-result -O3 -fomit-frame-pointer -DKYBER_K=2 -o nistkat/PQCgenKAT_kem512 kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c fips202.c symmetric-shake.c nistkat/rng.c nistkat/PQCgenKAT_kem.c  -lcrypto
