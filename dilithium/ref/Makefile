@@ -14,6 +14,13 @@ KECCAK_HEADERS256 = $(HEADERS256) fips202.h
 BENCH_HEADERS = test/bench.h
 BENCH_SOURCES = test/bench.c
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	GMP_DIR := /opt/homebrew/opt/gmp
+	CFLAGS += -I$(GMP_DIR)/include
+	LDFLAGS += -L$(GMP_DIR)/lib
+endif
+
 .PHONY: all speed shared clean
 
 all: \
@@ -43,7 +50,7 @@ test/ghkss256: test/test_GHKSS256.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $
 	  -o $@ test/test_GHKSS256.c GHKSS256.c $(KECCAK_SOURCES256) -lgmp -msse4.1 -maes -lm
 
 test/speed: test/benchmark_ghkss.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $(KECCAK_HEADERS256) $(BENCH_HEADERS) $(BENCH_SOURCES)
-	$(CC) $(CFLAGS) \
+	$(CC) $(CFLAGS) $(LDFLAGS) \
 	  -o $@ test/benchmark_ghkss.c GHKSS256.c $(KECCAK_SOURCES256) $(BENCH_SOURCES) -lgmp -msse4.1 -maes -lm
 
 

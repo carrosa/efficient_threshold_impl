@@ -55,7 +55,7 @@ static inline void sig1_wrapper(sig_input_t *in)
 
 static inline void sig2_wrapper(sig_input_t *in)
 {
-    as_sign_2(in->Ae, in->Be, in->u, in->v, in->A, in->Ae, in->Be);
+    // as_sign_2(in->Ae, in->Be, in->u, in->v, in->A, in->Ae, in->Be);
 }
 
 static inline void sig3_wrapper(sig_input_t *in)
