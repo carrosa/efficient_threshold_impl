@@ -44,7 +44,8 @@ test/ghkss256: test/test_GHKSS256.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $
 
 test/speed: test/benchmark_ghkss.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $(KECCAK_HEADERS256) $(BENCH_HEADERS) $(BENCH_SOURCES)
 	$(CC) $(CFLAGS) \
-	  -o $@ test/benchmark_ghkss.c GHKSS256.c $(KECCAK_SOURCES256) $(BENCH_HEADERS) $(BENCH_SOURCES) -lgmp -msse4.1 -maes -lm
+	  -o $@ test/benchmark_ghkss.c GHKSS256.c $(KECCAK_SOURCES256) $(BENCH_SOURCES) -lgmp -msse4.1 -maes -lm
+
 
 
 
