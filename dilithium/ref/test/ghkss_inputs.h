@@ -214,7 +214,6 @@ void init_dkg1(dkg_input_t *in)
     in->h_Bi = malloc(sizeof(uint8_t[32]));
 }
 
-
 void clear_dkg(dkg_input_t *in)
 {
     POLY_2D_CLEAR(in->Ae, KHAT, LHAT);
@@ -244,13 +243,32 @@ void clear_dkg(dkg_input_t *in)
 
 typedef struct
 {
-    poly (*A)[L];    // size: [K][L]
+    poly (*A)[L];     // size: [K][L]
     poly (*Ae)[LHAT]; // size: [KHAT][LHAT]
     poly (*Be)[M];    // size: [KHAT][M]
     poly *u;          // size: [LHAT]
     poly *v;          // size: [M]
 
-    
+    poly *c;
+    poly *z;           // L
+    poly *h;           // K
+    poly *yprime;      // K
+    poly (*u_r)[LHAT]; // THRESHOLD x LHAT
+    poly (*v_r)[M];    // THRESHOLD x M
+
+    // Can reuse?
+    poly *u_s; // LHAT
+    poly *v_s; // M
+    poly *u_z; // LHAT
+    poly *v_z; // M
+
+    poly (*ski)[M]; // LHAT x M
+    poly *mu;       // L, but padded to M
+    poly *dsi;      // L, but padded to M
+    poly (*w_i)[K]; // THRESHOLD x K
+    uint8_t *h_wi;  // THRESHOLD x 32 bytes
+    int user;
+    int32_t *users;
 } sig_input_t;
 
 void init_sig(sig_input_t *in)
@@ -265,11 +283,48 @@ void init_sig(sig_input_t *in)
     in->u = malloc(sizeof(poly[LHAT]));
     in->v = malloc(sizeof(poly[M]));
 
+    in->c = malloc(sizeof(poly));
+    in->z = malloc(sizeof(poly[L]));
+    in->h = malloc(sizeof(poly[K]));
+    in->yprime = malloc(sizeof(poly[K]));
+    in->u_r = malloc(sizeof(poly[THRESHOLD][LHAT]));
+    in->v_r = malloc(sizeof(poly[THRESHOLD][M]));
+    in->u_s = malloc(sizeof(poly[LHAT]));
+    in->v_s = malloc(sizeof(poly[M]));
+    in->u_z = malloc(sizeof(poly[LHAT]));
+    in->v_z = malloc(sizeof(poly[M]));
+    in->ski = malloc(sizeof(poly[LHAT][M]));
+    in->mu = malloc(sizeof(poly[M]));
+    in->dsi = malloc(sizeof(poly[M]));
+    in->w_i = malloc(sizeof(poly[THRESHOLD][K]));
+    in->h_wi = malloc(sizeof(uint8_t[THRESHOLD][32]));
+    in->users = malloc(sizeof(int32_t[USERS]));
+
     POLY_2D_INIT(in->A, K, L);
     POLY_2D_INIT(in->Ae, KHAT, LHAT);
     POLY_2D_INIT(in->Be, KHAT, M);
     poly_1d_init(in->u, LHAT);
     poly_1d_init(in->v, M);
+
+    poly_init(in->c);
+    poly_1d_init(in->z, L);
+    poly_1d_init(in->h, K);
+    poly_1d_init(in->yprime, K);
+    POLY_2D_INIT(in->u_r, THRESHOLD, LHAT);
+    POLY_2D_INIT(in->v_r, THRESHOLD, M);
+    poly_1d_init(in->u_s, LHAT);
+    poly_1d_init(in->v_s, M);
+    poly_1d_init(in->u_z, LHAT);
+    poly_1d_init(in->v_z, M);
+    POLY_2D_INIT(in->ski, LHAT, M);
+    poly_1d_init(in->mu, M);
+    poly_1d_init(in->dsi, M);
+    POLY_2D_INIT(in->w_i, THRESHOLD, K);
+
+    for (int i = 0; i < USERS; i++)
+    {
+        in->users[i] = i + 1;
+    }
 
     // Populate dummy data
     for (int i = 0; i < K; i++)
@@ -310,12 +365,43 @@ void clear_sig(sig_input_t *in)
     POLY_2D_CLEAR(in->Be, KHAT, M);
     poly_1d_clear(in->u, LHAT);
     poly_1d_clear(in->v, M);
+    poly_clear(in->c);
+    poly_1d_clear(in->z, L);
+    poly_1d_clear(in->h, K);
+    poly_1d_clear(in->yprime, K);
+    POLY_2D_CLEAR(in->u_r, THRESHOLD, LHAT);
+    POLY_2D_CLEAR(in->v_r, THRESHOLD, M);
+    poly_1d_clear(in->u_s, LHAT);
+    poly_1d_clear(in->v_s, M);
+    poly_1d_clear(in->u_z, LHAT);
+    poly_1d_clear(in->v_z, M);
+    POLY_2D_CLEAR(in->ski, LHAT, M);
+    poly_1d_clear(in->mu, M);
+    poly_1d_clear(in->dsi, M);
+    POLY_2D_CLEAR(in->w_i, THRESHOLD, K);
+
 
     free(in->A);
     free(in->Ae);
     free(in->Be);
     free(in->u);
     free(in->v);
+    free(in->c);
+    free(in->z);
+    free(in->h);
+    free(in->yprime);
+    free(in->u_r);
+    free(in->v_r);
+    free(in->u_s);
+    free(in->v_s);
+    free(in->u_z);
+    free(in->v_z);
+    free(in->ski);
+    free(in->mu);
+    free(in->dsi);
+    free(in->w_i);
+    free(in->h_wi);
+    free(in->users);
 }
 
 #endif

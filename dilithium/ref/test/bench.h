@@ -7,7 +7,8 @@
 // Helper for generating unique names
 #define CONCAT_(x, y) x##y
 #define CONCAT(x, y) CONCAT_(x, y)
-#define CPU_FREQ 2600000000 // in Hz
+// #define CPU_FREQ 2600000000 // in Hz (Caroline PC)
+// #define CPU_FREQ 2294608000 // in Hz (NTNU Server)
 
 // How many times to run the benchmarks
 #define BENCH 10
