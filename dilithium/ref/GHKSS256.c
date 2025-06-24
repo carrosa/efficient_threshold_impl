@@ -160,10 +160,7 @@ void gen_sharing_poly(poly (*P_coeff)[LHAT][M], poly (*S)[M])
 
     for (int i = 0; i < LHAT; i++)
     {
-        for (int j = 0; j < M; j++)
-        {
-            poly_copy(&P_coeff[0][i][j], &S[i][j]);
-        }
+        fast_polyvec_copy(&P_coeff[0][i], &S[i], M); // Copy S to P_coeff[0]
     }
 
     for (int k = 1; k < THRESHOLD; k++)
@@ -173,8 +170,27 @@ void gen_sharing_poly(poly (*P_coeff)[LHAT][M], poly (*S)[M])
             for (int j = 0; j < M; j++)
             {
                 poly_uniform(&P_coeff[k][i][j], seed, nonce++);
-                poly_ntt(&P_coeff[k][i][j]);
                 poly_reduce(&P_coeff[k][i][j]);
+            }
+        }
+    }
+}
+
+// First iteration
+void compute_share_horner(
+    poly (*Share)[M],         // [LHAT][M]
+    poly (*P_coeff)[LHAT][M], // [THRESHOLD][LHAT][M]
+    int32_t user)             // users[USERS]
+{
+    for (int i = 0; i < LHAT; i++)
+    {
+        for (int j = 0; j < M; j++)
+        {
+            for (int r = THRESHOLD - 1; r >= 0; r--)
+            {
+                poly_scale_si(&Share[i][j], user);
+                poly_add(&Share[i][j], &Share[i][j], &P_coeff[r][i][j]);
+                poly_reduce(&Share[i][j]);
             }
         }
     }
@@ -193,13 +209,9 @@ void compute_share(poly (*Share)[M], poly (*P_coeff)[LHAT][M], int32_t user)
         {
             for (int j = 0; j < M; j++)
             {
-                // poly tpoly;
-                // poly_init(&tpoly);
-                // poly_copy(&tpoly, &P_coeff[r][i][j]);
                 poly_scale(&P_coeff[r][i][j], pwr);
                 poly_add(&Share[i][j], &Share[i][j], &P_coeff[r][i][j]);
                 poly_reduce(&Share[i][j]);
-                // poly_clear(&tpoly);
             }
         }
 
@@ -1069,11 +1081,11 @@ void dk_gen_1(
             poly_invntt_tomont(&Bi[i][k]);
 
             // Add noise q*Ei
-            binary_sampler(t.coeffs, N);
-            poly_reduce(&t);
-            poly_copy(&Ei[i][k], &t);
-            poly_scale(&t, GMP_q);
-            poly_add(&Bi[i][k], &Bi[i][k], &t);
+            binary_sampler(Ei[i][k].coeffs, N);
+            poly_reduce(&Ei[i][k]);
+            // poly_copy(&Ei[i][k], &t);
+            poly_scale(&Ei[i][k], GMP_q);
+            poly_add(&Bi[i][k], &Bi[i][k], &Ei[i][k]);
             poly_reduce(&Bi[i][k]);
         }
     }
@@ -1148,6 +1160,30 @@ void dk_gen_2_with_share_1user(
     free(Bij);
 }
 
+void poly_matmul_acc(
+    poly (*out)[M],  // [KHAT][M]
+    poly (*A)[LHAT], // [KHAT][LHAT]
+    poly (*S)[M],    // [LHAT][M]
+    poly *tmp        // temporary scratch polynomial
+)
+{
+    for (int i = 0; i < KHAT; i++)
+    {
+        for (int k = 0; k < M; k++)
+        {
+            // First term
+            poly_pointwise_montgomery(&out[i][k], &A[i][0], &S[0][k]);
+            for (int j = 1; j < LHAT; j++)
+            {
+                poly_pointwise_montgomery(tmp, &A[i][j], &S[j][k]);
+                poly_add(&out[i][k], &out[i][k], tmp);
+            }
+            poly_invntt_tomont(&out[i][k]);
+            poly_reduce(&out[i][k]);
+        }
+    }
+}
+
 void dk_gen_2(
     poly (*Si)[M],    // [LHAT][M]
     poly (*Ei)[M],    // [LHAT][M]
@@ -1176,39 +1212,27 @@ void dk_gen_2(
     gen_sharing_poly(P_coeff_E, Ei);
 
     // Generate secret shares for each user
+    poly tmp;
+    poly_init(&tmp);
     for (int u = 0; u < USERS; u++)
     {
-        compute_share(Shares_S, P_coeff_S, users[u]);
-        compute_share(Shares_E, P_coeff_E, users[u]);
+        compute_share_horner(Shares_S, P_coeff_S, users[u]);
+        compute_share_horner(Shares_E, P_coeff_E, users[u]);
 
         // Compute Bij = A * Shares_S[u] + q * Shares_E[u]
-        poly tmp;
-        poly_init(&tmp);
+        poly_matmul_acc(Bij, Ae, Shares_S, &tmp);
+
         for (int i = 0; i < KHAT; i++)
         {
             for (int k = 0; k < M; k++)
             {
-                for (int j = 0; j < LHAT; j++)
-                {
-                    poly_zero(&tmp);
-                    poly_pointwise_montgomery(&tmp, &Ae[i][j], &Shares_S[j][k]);
-                    poly_reduce(&tmp);
-                    poly_add(&Bij[i][k], &Bij[i][k], &tmp);
-                    poly_reduce(&Bij[i][k]);
-                }
-
-                poly_reduce(&Bij[i][k]);
-                poly_invntt_tomont(&Bij[i][k]);
-
-                // Add scaled noise
                 poly_scale(&Shares_E[i][k], GMP_q);
-                poly_reduce(&Shares_E[i][k]);
                 poly_add(&Bij[i][k], &Bij[i][k], &Shares_E[i][k]);
                 poly_reduce(&Bij[i][k]);
             }
         }
-        poly_clear(&tmp);
     }
+    poly_clear(&tmp);
 
     // Clear temporary sharing polynomials
     poly_1d_clear((poly *)P_coeff_S, THRESHOLD * LHAT * M);
@@ -1230,13 +1254,13 @@ void dk_gen_2_old(
     int32_t *users) // users[USERS]
 {
     // Allocate sharing polynomial coefficients
-    poly(*P_coeff_S)[LHAT][M] = malloc(sizeof(poly[THRESHOLD][LHAT][M]));
-    poly(*P_coeff_E)[KHAT][M] = malloc(sizeof(poly[THRESHOLD][KHAT][M]));
+    poly(*P_coeff_S)[LHAT][M] = malloc(sizeof(poly) * THRESHOLD * LHAT * M);
+    poly(*P_coeff_E)[KHAT][M] = malloc(sizeof(poly) * THRESHOLD * KHAT * M);
 
     // Since benchmarking not needed for other than computation, need to store and send in real application, will be big
-    poly(*Shares_S)[M] = malloc(sizeof(poly[LHAT][M])); // [LHAT][M]
-    poly(*Shares_E)[M] = malloc(sizeof(poly[KHAT][M])); // [KHAT][M]
-    poly(*Bij)[M] = malloc(sizeof(poly[KHAT][M]));      // [USERS][KHAT][M]
+    poly(*Shares_S)[M] = malloc(sizeof(poly) * LHAT * M); // [LHAT][M]
+    poly(*Shares_E)[M] = malloc(sizeof(poly) * KHAT * M); // [KHAT][M]
+    poly(*Bij)[M] = malloc(sizeof(poly) * KHAT * M);      // [USERS][KHAT][M]
 
     POLY_2D_INIT(Shares_S, LHAT, M);
     POLY_2D_INIT(Shares_E, KHAT, M);
@@ -1253,8 +1277,8 @@ void dk_gen_2_old(
     // Generate secret shares for each user
     for (int u = 0; u < USERS; u++)
     {
-        compute_share(Shares_S, P_coeff_S, users[u]);
-        compute_share(Shares_E, P_coeff_E, users[u]);
+        compute_share_horner(Shares_S, P_coeff_S, users[u]);
+        compute_share_horner(Shares_E, P_coeff_E, users[u]);
 
         // Compute Bij = A * Shares_S[u] + q * Shares_E[u]
         for (int i = 0; i < KHAT; i++)

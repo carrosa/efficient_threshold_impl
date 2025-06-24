@@ -11,17 +11,19 @@ SOURCES256 = params.c poly256.c ntt256.c reduce256.c fastrandombytes.c test/cpuc
 HEADERS256 = config.h params.h poly256.h ntt256.h reduce256.h symmetric.h randombytes.h fastrandombytes.h test/cpucycles.h gaussian_ref.h
 KECCAK_SOURCES256 = $(SOURCES256) fips202.c symmetric-shake.c
 KECCAK_HEADERS256 = $(HEADERS256) fips202.h
-BENCH_HEADERS = test/bench.h
-BENCH_SOURCES = test/bench.c
+BENCH_HEADERS = test/bench.h test/cpu_freq_runtime.h
+BENCH_SOURCES = test/bench.c test/cpu_freq_runtime.c
 
-PLATFORM ?= ntnu
-ifeq ($(PLATFORM), caroline)
-CPU_FREQ := 2600000000
-else ifeq ($(PLATFORM), ntnu)
-CPU_FREQ := 2294608000
-else
-$(error Unknown PLATFORM '$(PLATFORM)', must be 'caroline' or 'ntnu')
-endif
+BFLAGS = -O3 -fomit-frame-pointer -march=native -flto -ftree-vectorize
+
+# PLATFORM ?= ntnu
+# ifeq ($(PLATFORM), caroline)
+# CPU_FREQ := 2600000000
+# else ifeq ($(PLATFORM), ntnu)
+# CPU_FREQ := 2294608000
+# else
+# $(error Unknown PLATFORM '$(PLATFORM)', must be 'caroline' or 'ntnu')
+# endif
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -59,8 +61,8 @@ test/ghkss256: test/test_GHKSS256.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $
 	  -o $@ test/test_GHKSS256.c GHKSS256.c $(KECCAK_SOURCES256) -lgmp -msse4.1 -maes -lm
 
 test/speed: test/benchmark_ghkss.c GHKSS256.c GHKSS256.h $(KECCAK_SOURCES256) $(KECCAK_HEADERS256) $(BENCH_HEADERS) $(BENCH_SOURCES)
-	$(CC) $(CFLAGS) $(LDFLAGS) -DCPU_FREQ=$(CPU_FREQ) \
-	  -o $@ test/benchmark_ghkss.c GHKSS256.c $(KECCAK_SOURCES256) $(BENCH_SOURCES) -lgmp -msse4.1 -maes -lm
+	$(CC) $(BFLAGS) $(LDFLAGS) \
+	  -o $@ test/benchmark_ghkss.c GHKSS256.c $(KECCAK_SOURCES256) $(BENCH_SOURCES) -lgmp -lm
 
 
 

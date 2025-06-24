@@ -3,11 +3,17 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "cpu_freq_runtime.h"
 
 // Helper for generating unique names
 #define CONCAT_(x, y) x##y
 #define CONCAT(x, y) CONCAT_(x, y)
-// #define CPU_FREQ 2600000000 // in Hz (Caroline PC)
+
+#define CPU_FREQ 2600000000 // in Hz (Caroline PC, comment out if measuring runtime freq)
+
+#ifndef CPU_FREQ
+#define CPU_FREQ calibrate_cpu_freq_hz()
+#endif
 // #define CPU_FREQ 2294608000 // in Hz (NTNU Server)
 
 // How many times to run the benchmarks
@@ -24,6 +30,7 @@
     bench_print();
 
 #define BENCH_ONCE_W_ARGS(LABEL, FUNC, ...) \
+    printf("CPU_FREQ not defined, using runtime calibration: %llu Hz\n", CPU_FREQ); \
     BENCH_ONCE(LABEL, FUNC(__VA_ARGS__))
 
 #define BENCH_MANY(LABEL, FUNC)             \
@@ -65,4 +72,5 @@ void bench_after(void);
 void bench_compute(int benches);
 void bench_print(void);
 unsigned long long bench_get_total(void);
+
 #endif

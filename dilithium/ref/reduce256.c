@@ -19,6 +19,35 @@
  * Returns:
  *   None (result is stored in r)
  **************************************************/
+int mont_initialized = 0;
+mp_limb_t mont_qinv;
+mp_limb_t mont_q_limbs[3];
+mp_size_t mont_q_size;
+mp_bitcnt_t mont_bits = 128;
+
+void poly_init_mont(void)
+{
+  if (!mont_initialized)
+  {
+    mont_qinv = mpz_get_ui(GMP_QINV);
+    mont_q_size = GMP_Q->_mp_size;
+    mpn_copyi(mont_q_limbs, GMP_Q->_mp_d, mont_q_size);
+    mont_initialized = 1;
+  }
+}
+
+void montgomery_reduce_old(mpz_t r, mpz_t a, mpz_t t, mpz_t tmp)
+{
+  mp_size_t a_size = a->_mp_size;
+  mp_size_t abs_a_size = __GMP_ABS(a_size);
+  mp_size_t mod_size = mont_bits / GMP_NUMB_BITS;
+  if (abs_a_size > mod_size)
+  {
+    abs_a_size = mod_size;
+  }
+  mp_ptr t_limbs = t->_mp_d;
+}
+
 void montgomery_reduce(mpz_t r, mpz_t a)
 {
   mpz_t t, tmp;
@@ -40,6 +69,34 @@ void montgomery_reduce(mpz_t r, mpz_t a)
   //   mpz_sub(r, r, GMP_Q);
 
   mpz_clears(t, tmp, NULL);
+}
+
+int barrett_initialized = 0;
+mpz_t barrett_m, q_half, neg_q_half;
+unsigned int barrett_shift;
+void init_barrett(void)
+{
+  if (!barrett_initialized)
+  {
+    mpz_t barrett_k;
+    mpz_inits(
+        barrett_m,
+        barrett_k,
+        q_half,
+        neg_q_half,
+        NULL);
+    unsigned int k_bits = 119; // Hardcoded log2(Q)
+    mpz_set_ui(barrett_k, 1);
+    mpz_mul_2exp(barrett_k, barrett_k, 2 * k_bits);
+    mpz_fdiv_q(barrett_m, barrett_k, GMP_Q); // m = floor(2^(2*k) / Q)
+    barrett_shift = 2 * k_bits;              // 238
+    mpz_clear(barrett_k);
+
+    mpz_fdiv_q_ui(q_half, GMP_Q, 2); // Q/2
+    mpz_neg(neg_q_half, q_half);     // -Q/2
+
+    barrett_initialized = 1;
+  }
 }
 
 /*************************************************

@@ -15,11 +15,9 @@ int polycmp(const poly *p1, const poly *p2)
 // Init polynomial
 void poly_init(poly *p)
 {
-    unsigned int i;
-    for (i = 0; i < N; i++)
+    for (int i = 0; i < N; i++)
     {
-        mpz_init(p->coeffs[i]);
-        mpz_set_ui(p->coeffs[i], 0);
+        mpz_init2(p->coeffs[i], 128);
     }
 }
 void poly_zero(poly *p)
@@ -83,8 +81,34 @@ void poly_clears(poly *p, ...)
     va_end(args);
 }
 
-// Reduce polynomial
 void poly_reduce(poly *a)
+{
+    mpz_t t, tmp;
+    mpz_inits(t, tmp, NULL);
+
+    for (int i = 0; i < N; i++)
+    {
+        // t = floor(a * m / 2^(2*log2(Q)))
+        mpz_mul(t, a->coeffs[i], barrett_m);
+        mpz_fdiv_q_2exp(t, t, barrett_shift);
+        // a = a - t * Q
+        mpz_mul(tmp, t, GMP_Q);
+        mpz_sub(a->coeffs[i], a->coeffs[i], tmp);
+        // Center the result
+        if (mpz_cmp(a->coeffs[i], q_half) >= 0)
+        {
+            mpz_sub(a->coeffs[i], a->coeffs[i], GMP_Q);
+        }
+        else if (mpz_cmp(a->coeffs[i], neg_q_half) < 0)
+        {
+            mpz_add(a->coeffs[i], a->coeffs[i], GMP_Q);
+        }
+    }    
+    mpz_clears(t, tmp, NULL);
+}
+
+// Reduce polynomial
+void poly_reduce_old(poly *a)
 {
     unsigned int i;
     // mpz_t tmp;
@@ -297,21 +321,52 @@ void poly_copy(poly *dst, const poly *src)
     }
 }
 
-void poly_scale(poly *r, mpz_t c)
+void fast_polyvec_copy(poly *dst, const poly *src, size_t length)
 {
-    unsigned int j;
-    mpz_t tmp;
-    mpz_init(tmp);
+    for (size_t i = 0; i < length; i++)
+    {
+        for (unsigned int j = 0; j < N; j++)
+        {
+            mpz_t *dst_coeff = &dst[i].coeffs[j];
+            const mpz_t *src_coeff = &src[i].coeffs[j];
+            mp_size_t size = (*src_coeff)->_mp_size;
+            mp_ptr dst_limbs = (*dst_coeff)->_mp_d;
+            mp_srcptr src_limbs = (*src_coeff)->_mp_d;
+            mp_size_t abs_size = __GMP_ABS(size);
 
-    for (j = 0; j < N; j++)
+            if (abs_size > (*dst_coeff)->_mp_alloc)
+            {
+                dst_limbs = mpz_realloc(*dst_coeff, abs_size);
+                (*dst_coeff)->_mp_d = dst_limbs;
+            }
+            if (abs_size > 0)
+            {
+                mpn_copyi(dst_limbs, src_limbs, abs_size);
+            }
+            (*dst_coeff)->_mp_size = size;
+        }
+    }
+}
+
+void poly_scale_si(poly *r, int32_t c)
+{
+    for (int j = 0; j < N; j++)
     {
         // Multiply the j-th coefficient by c
-        mpz_mul(tmp, r->coeffs[j], c);
-        // Reduce modulo Q: r->coeffs[j] = temp mod Q
-        mpz_mod(r->coeffs[j], tmp, GMP_Q);
+        mpz_mul_si(r->coeffs[j], r->coeffs[j], c);
     }
 
-    mpz_clear(tmp);
+    poly_reduce(r);
+}
+
+void poly_scale(poly *r, mpz_t c)
+{
+    for (int j = 0; j < N; j++)
+    {
+        // Multiply the j-th coefficient by c
+        mpz_mul(r->coeffs[j], r->coeffs[j], c);
+    }
+
     poly_reduce(r);
 }
 

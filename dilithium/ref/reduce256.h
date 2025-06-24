@@ -13,4 +13,9 @@ void caddq(mpz_t r, const mpz_t a);
 
 void freeze(mpz_t r, const mpz_t a);
 
+void init_barrett(void);
+
+extern mpz_t barrett_m, q_half, neg_q_half;
+extern unsigned int barrett_shift;
+
 #endif

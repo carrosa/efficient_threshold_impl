@@ -12,8 +12,8 @@
 #define D 13
 #define SAMPLEBYTES 15
 
-#define THRESHOLD 15
-#define USERS 16
+#define THRESHOLD 1023
+#define USERS 1024
 
 #define N 256
 #define MONT_BITS 128

@@ -83,6 +83,8 @@ void poly_uniform_eta(poly *a,
 
 void poly_copy(poly *dst, const poly *src);
 
+void fast_polyvec_copy(poly *dst, const poly *src, size_t length);
+
 void poly_scale(poly *r, mpz_t c);
 
 void poly_mod(poly *r, mpz_t c);
@@ -110,5 +112,6 @@ void poly_matrix_hash_shake256(
     size_t outlen);
 
 void get_random_dummy_poly(poly *p);
+
 
 #endif
