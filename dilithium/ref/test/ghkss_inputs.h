@@ -163,6 +163,7 @@ void init_dkg(dkg_input_t *in)
     in->Sij = malloc(sizeof(poly) * USERS * LHAT * M);
     in->Be = malloc(sizeof(poly) * KHAT * M);
     in->Sei = malloc(sizeof(poly) * LHAT * M);
+    in->h_Bi = malloc(sizeof(uint8_t[32]));
 
     POLY_2D_INIT(in->Ae, KHAT, LHAT);
     POLY_2D_INIT(in->Si, LHAT, M);
@@ -208,11 +209,6 @@ void init_dkg(dkg_input_t *in)
     }
 }
 
-// Used inside DKG round 1 benchmark
-void init_dkg1(dkg_input_t *in)
-{
-    in->h_Bi = malloc(sizeof(uint8_t[32]));
-}
 
 void clear_dkg(dkg_input_t *in)
 {
@@ -243,16 +239,17 @@ void clear_dkg(dkg_input_t *in)
 
 typedef struct
 {
-    poly (*A)[L];     // size: [K][L]
+    poly (*A_pks)[L];     // size: [K][L]
     poly (*Ae)[LHAT]; // size: [KHAT][LHAT]
     poly (*Be)[M];    // size: [KHAT][M]
     poly *u;          // size: [LHAT]
     poly *v;          // size: [M]
 
-    poly *c;
-    poly *z;           // L
-    poly *h;           // K
+    poly *c_sig;
+    poly *z_sig;           // L
+    poly *h_sig;           // K
     poly *yprime;      // K
+    poly *wprime;      // K
     poly (*u_r)[LHAT]; // THRESHOLD x LHAT
     poly (*v_r)[M];    // THRESHOLD x M
 
@@ -277,16 +274,17 @@ void init_sig(sig_input_t *in)
     uint16_t nonce = 0;
     gen_randomness(seed);
 
-    in->A = malloc(sizeof(poly[K][L]));
+    in->A_pks = malloc(sizeof(poly[K][L]));
     in->Ae = malloc(sizeof(poly[KHAT][LHAT]));
     in->Be = malloc(sizeof(poly[KHAT][M]));
     in->u = malloc(sizeof(poly[LHAT]));
     in->v = malloc(sizeof(poly[M]));
 
-    in->c = malloc(sizeof(poly));
-    in->z = malloc(sizeof(poly[L]));
-    in->h = malloc(sizeof(poly[K]));
+    in->c_sig = malloc(sizeof(poly));
+    in->z_sig = malloc(sizeof(poly[L]));
+    in->h_sig = malloc(sizeof(poly[K]));
     in->yprime = malloc(sizeof(poly[K]));
+    in->wprime = malloc(sizeof(poly[K]));
     in->u_r = malloc(sizeof(poly[THRESHOLD][LHAT]));
     in->v_r = malloc(sizeof(poly[THRESHOLD][M]));
     in->u_s = malloc(sizeof(poly[LHAT]));
@@ -300,16 +298,17 @@ void init_sig(sig_input_t *in)
     in->h_wi = malloc(sizeof(uint8_t[THRESHOLD][32]));
     in->users = malloc(sizeof(int32_t[USERS]));
 
-    POLY_2D_INIT(in->A, K, L);
+    POLY_2D_INIT(in->A_pks, K, L);
     POLY_2D_INIT(in->Ae, KHAT, LHAT);
     POLY_2D_INIT(in->Be, KHAT, M);
     poly_1d_init(in->u, LHAT);
     poly_1d_init(in->v, M);
 
-    poly_init(in->c);
-    poly_1d_init(in->z, L);
-    poly_1d_init(in->h, K);
+    poly_init(in->c_sig);
+    poly_1d_init(in->z_sig, L);
+    poly_1d_init(in->h_sig, K);
     poly_1d_init(in->yprime, K);
+    poly_1d_init(in->wprime, K);
     POLY_2D_INIT(in->u_r, THRESHOLD, LHAT);
     POLY_2D_INIT(in->v_r, THRESHOLD, M);
     poly_1d_init(in->u_s, LHAT);
@@ -331,9 +330,9 @@ void init_sig(sig_input_t *in)
     {
         for (int j = 0; j < L; j++)
         {
-            poly_uniform(&in->A[i][j], seed, nonce++);
-            poly_ntt(&in->A[i][j]);
-            poly_reduce(&in->A[i][j]);
+            poly_uniform(&in->A_pks[i][j], seed, nonce++);
+            poly_ntt(&in->A_pks[i][j]);
+            poly_reduce(&in->A_pks[i][j]);
         }
     }
 
@@ -360,15 +359,16 @@ void init_sig(sig_input_t *in)
 
 void clear_sig(sig_input_t *in)
 {
-    POLY_2D_CLEAR(in->A, K, L);
+    POLY_2D_CLEAR(in->A_pks, K, L);
     POLY_2D_CLEAR(in->Ae, KHAT, LHAT);
     POLY_2D_CLEAR(in->Be, KHAT, M);
     poly_1d_clear(in->u, LHAT);
     poly_1d_clear(in->v, M);
-    poly_clear(in->c);
-    poly_1d_clear(in->z, L);
-    poly_1d_clear(in->h, K);
+    poly_clear(in->c_sig);
+    poly_1d_clear(in->z_sig, L);
+    poly_1d_clear(in->h_sig, K);
     poly_1d_clear(in->yprime, K);
+    poly_1d_clear(in->wprime, K);
     POLY_2D_CLEAR(in->u_r, THRESHOLD, LHAT);
     POLY_2D_CLEAR(in->v_r, THRESHOLD, M);
     poly_1d_clear(in->u_s, LHAT);
@@ -381,15 +381,16 @@ void clear_sig(sig_input_t *in)
     POLY_2D_CLEAR(in->w_i, THRESHOLD, K);
 
 
-    free(in->A);
+    free(in->A_pks);
     free(in->Ae);
     free(in->Be);
     free(in->u);
     free(in->v);
-    free(in->c);
-    free(in->z);
-    free(in->h);
+    free(in->c_sig);
+    free(in->z_sig);
+    free(in->h_sig);
     free(in->yprime);
+    free(in->wprime);
     free(in->u_r);
     free(in->v_r);
     free(in->u_s);
@@ -403,5 +404,14 @@ void clear_sig(sig_input_t *in)
     free(in->h_wi);
     free(in->users);
 }
+
+typedef struct
+{
+    poly (*A_pks)[L]; // K x L
+    poly (*Ae)[LHAT]; // KHAT x LHAT
+    poly (*Be)[M];    // KHAT x M
+    poly *u;          // LHAT
+    poly *v;          // M
+} sig1_input_t;
 
 #endif

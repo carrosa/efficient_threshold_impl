@@ -123,7 +123,7 @@ void dummy_poly_w(poly *p)
 void benchmark()
 {
 
-    int num_timings = 100;
+    int num_timings = 1;
     timing_results_t timings[num_timings];
     int32_t users[USERS];
     for (int i = 0; i < USERS; i++)
@@ -196,19 +196,19 @@ void benchmark()
 
     uint8_t (*h_Bi)[32] = malloc(sizeof(uint8_t[USERS][32]));
 
-    start = get_cycles();
-    dk_gen_1(pke->A, Si, Ei, Bi, h_Bi[0]);
-    end = get_cycles();
-    print_timing(start, end, "dk_gen_1");
+    // start = get_cycles();
+    // dk_gen_1(pke->A, Si, Ei, Bi, h_Bi[0]);
+    // end = get_cycles();
+    // print_timing(start, end, "dk_gen_1");
 
-    start = get_cycles();
-    dk_gen_2_old(
-        Si,
-        Ei,
-        pke,
-        users);
-    end = get_cycles();
-    print_timing(start, end, "dk_gen_2");
+    // start = get_cycles();
+    // dk_gen_2_old(
+    //     Si,
+    //     Ei,
+    //     pke,
+    //     users);
+    // end = get_cycles();
+    // print_timing(start, end, "dk_gen_2");
 
     poly_1d_clear((poly *)Si, LHAT * M);
     free(Si);
@@ -244,15 +244,15 @@ void benchmark()
     poly(*Sei)[M] = malloc(sizeof(poly[LHAT][M]));
     POLY_2D_INIT(Sei, LHAT, M);
 
-    printf("dk_gen_3\n");
-    start = get_cycles();
-    dk_gen_3(
-        Bj,
-        Sij,
-        Be,
-        Sei);
-    end = get_cycles();
-    print_timing(start, end, "dk_gen_3");
+    // printf("dk_gen_3\n");
+    // start = get_cycles();
+    // dk_gen_3(
+    //     Bj,
+    //     Sij,
+    //     Be,
+    //     Sei);
+    // end = get_cycles();
+    // print_timing(start, end, "dk_gen_3");
 
     // Clear variables not used anymore
     poly_1d_clear((poly *)Sij, USERS * LHAT * M);
@@ -421,7 +421,7 @@ void benchmark()
     {
         printf("as_sign_3\n");
         start = get_cycles();
-        as_sign_3(&ctx_z, pks, &sig, pks->yprime, wprime, dsi, users);
+        as_sign_3_old(&ctx_z, pks, &sig, pks->yprime, wprime, dsi, users);
         end = get_cycles();
         timings[i].as_sign_3 = end - start;
     }
@@ -441,7 +441,7 @@ void benchmark()
     {
         printf("as_verify\n");
         start = get_cycles();
-        as_verify(&sig, pks, mu, Bz);
+        as_verify_old(&sig, pks, mu, Bz);
         end = get_cycles();
         timings[i].as_verify = end - start;
     }
@@ -503,47 +503,47 @@ void benchmark_dkg()
     end = get_cycles();
     print_timing(start, end, "keygen_e_1d");
 
-    poly *mu = malloc(sizeof(poly[M]));
-    poly_1d_init(mu, M);
+    // poly *mu = malloc(sizeof(poly[M]));
+    // poly_1d_init(mu, M);
 
-    // Sample mu
-    gen_message_1d(mu);
+    // // Sample mu
+    // gen_message_1d(mu);
 
-    poly(*Si)[M] = malloc(sizeof(poly[LHAT][M]));
-    POLY_2D_INIT(Si, LHAT, M);
+    // poly(*Si)[M] = malloc(sizeof(poly[LHAT][M]));
+    // POLY_2D_INIT(Si, LHAT, M);
 
-    poly(*Ei)[M] = malloc(sizeof(poly[KHAT][M]));
-    POLY_2D_INIT(Ei, KHAT, M);
+    // poly(*Ei)[M] = malloc(sizeof(poly[KHAT][M]));
+    // POLY_2D_INIT(Ei, KHAT, M);
 
-    poly(*Bi)[M] = malloc(sizeof(poly[KHAT][M]));
-    POLY_2D_INIT(Bi, KHAT, M);
+    // poly(*Bi)[M] = malloc(sizeof(poly[KHAT][M]));
+    // POLY_2D_INIT(Bi, KHAT, M);
 
-    uint8_t (*h_Bi)[32] = malloc(sizeof(uint8_t[USERS][32]));
+    // uint8_t (*h_Bi)[32] = malloc(sizeof(uint8_t[USERS][32]));
 
-    start = get_cycles();
-    dk_gen_1(pke->A, Si, Ei, Bi, h_Bi[0]);
-    end = get_cycles();
-    print_timing(start, end, "dk_gen_1");
+    // start = get_cycles();
+    // dk_gen_1(pke->A, Si, Ei, Bi, h_Bi[0]);
+    // end = get_cycles();
+    // print_timing(start, end, "dk_gen_1");
 
-    start = get_cycles();
-    dk_gen_2_old(
-        Si,
-        Ei,
-        pke,
-        users);
-    end = get_cycles();
-    print_timing(start, end, "dk_gen_2");
+    // start = get_cycles();
+    // dk_gen_2_old(
+    //     Si,
+    //     Ei,
+    //     pke,
+    //     users);
+    // end = get_cycles();
+    // print_timing(start, end, "dk_gen_2");
 
-    poly_1d_clear((poly *)Si, LHAT * M);
-    free(Si);
-    poly_1d_clear((poly *)Ei, KHAT * M);
-    free(Ei);
-    poly_1d_clear((poly *)Bi, KHAT * M);
-    free(Bi);
+    // poly_1d_clear((poly *)Si, LHAT * M);
+    // free(Si);
+    // poly_1d_clear((poly *)Ei, KHAT * M);
+    // free(Ei);
+    // poly_1d_clear((poly *)Bi, KHAT * M);
+    // free(Bi);
 
-    poly_1d_clear(mu, M);
-    free(mu);
-    poly_clear(&dummy);
+    // poly_1d_clear(mu, M);
+    // free(mu);
+    // poly_clear(&dummy);
 }
 
 void benchmark_dkg2()
@@ -710,7 +710,7 @@ int main(void)
     //     benchmark(&timings[i]);
     // }
     // print_avg_timing_struct(timings, num_timings);
-    benchmark_dkg2();
+    benchmark();
 
     // Clear GMP variables
     clear_zetas();

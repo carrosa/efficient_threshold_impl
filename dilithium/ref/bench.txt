@@ -1,0 +1,57 @@
+N=64, T=63
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 1                      = 887012934 cycles (0.341159 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 2                      = 462868563577 cycles (178.026371 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 3                      = 934682344 cycles (0.359493 seconds)
+
+keygen_e_1d (just to generate an A
+keygen_e_1d: 368.591688 ms
+
+
+N=32, T=31
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 1                      = 818482666 cycles (0.314801 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 2                      = 80872554976 cycles (31.104829 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 3                      = 453976637 cycles (0.174606 seconds)
+
+keygen_e_1d (just to generate an A
+keygen_e_1d: 367.107097 ms
+
+
+N=16, T=15
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 1                      = 813844910 cycles (0.313017 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 2                      = 20693254715 cycles (7.958944 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 3                      = 232341640 cycles (0.089362 seconds)
+
+keygen_e_1d (just to generate an A
+keygen_e_1d: 354.383911 ms
+
+N=8, T=7
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 1                      = 817254744 cycles (0.314329 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 2                      = 7887205985 cycles (3.033541 seconds)
+
+CPU_FREQ not defined, using runtime calibration: 2600000000 Hz
+BENCH: DKG round 3                      = 118013158 cycles (0.045390 seconds)
+
+keygen_e_1d (just to generate an A
+keygen_e_1d: 354.855218 ms

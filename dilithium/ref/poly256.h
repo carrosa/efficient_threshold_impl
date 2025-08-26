@@ -21,7 +21,7 @@ void H1(
     poly arr[K],
     uint8_t *hash);
 
-void H0(
+void Hash(
     poly arr[K],
     uint8_t *hash);
 

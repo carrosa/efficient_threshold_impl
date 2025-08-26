@@ -257,7 +257,7 @@ void as_sign_2(
     poly *c,           // just one poly
     poly *z,           // L
     poly *h,           // K
-    poly (*A)[L],      // KxL
+    poly (*A_pks)[L],  // KxL
     poly *yprime,      // K
     poly (*u_r)[LHAT], // THRESHOLD x LHAT
     poly (*v_r)[M],    // THRESHOLD x M
@@ -295,7 +295,7 @@ void as_sign_2_old(
 //     poly dsi[THRESHOLD][M],
 //     const int32_t *users); // USERS
 
-void as_sign_3(
+void as_sign_3_old(
     ctx_t *ctx_z,          // ctx_z->v [M]
     const pks_t *pks,      // pks->A [K][L]
     sig_t *sig,            // sig->c, sig->z [L], sig->h [K]
@@ -304,7 +304,19 @@ void as_sign_3(
     poly (*dsi)[M],        // [THRESHOLD][M]
     const int32_t *users); // [USERS]
 
-int as_verify(
+void as_sign_3(
+    poly *u_z,        // LHAT
+    poly *v_z,        // M
+    poly (*A_pks)[L], // KxL
+    poly *c_sig,      // just one poly
+    poly *z_sig,      // L
+    poly *h_sig,      // K
+    poly *yprime,     // K
+    poly *wprime,     // K
+    poly *dsi,        // L, but padded to M
+    int32_t *users);
+
+int as_verify_old(
     sig_t *sig,
     pks_t *pks,
     poly *mu,
@@ -318,10 +330,10 @@ void dk_gen_1(
     uint8_t *h_Bi);   // 32-byte output hash
 
 void dk_gen_2(
-    poly (*Si)[M], // [LHAT][M]
-    poly (*Ei)[M], // [LHAT][M]
+    poly (*Si)[M],    // [LHAT][M]
+    poly (*Ei)[M],    // [LHAT][M]
     poly (*Ae)[LHAT], // [KHAT][LHAT]
-    int32_t *users); // users[USERS]
+    int32_t *users);  // users[USERS]
 
 void dk_gen_2_old(
     poly (*Si)[M], // [LHAT][M]

@@ -499,14 +499,71 @@ void as_keygen_1(
     }
 
     // Hash yi with H0
-    H0(yi, h_yi); // yi is an array of poly[K]
+    Hash(yi, h_yi); // yi is an array of poly[K]
 
-    // Encrypt si under (Ae, Be)
+    // // Encrypt si under (Ae, Be)
     encrypt_1d(ctx->u, ctx->v, Ae, Be, si);
 
     // Free temp ei
     poly_1d_clear(ei, K);
     free(ei);
+}
+
+void as_keygen_preenc(
+    poly (*As)[L],    // [K][L], NTT domain
+    poly *si,         // [L], initialized
+    poly *yi,         // [K], initialized
+    uint8_t h_yi[32]) // output hash
+{
+    // Sample si in time domain, reduce, then NTT
+    for (int i = 0; i < L; i++) {
+        gaussian_sampler_y(si[i].coeffs, N);
+        poly_reduce(&si[i]);
+        poly_ntt(&si[i]);
+    }
+
+    // Sample ei in TIME domain (do NOT NTT; we add after inverse NTT)
+    poly *ei = (poly *)malloc(sizeof(poly) * K);
+    if (!ei) { fprintf(stderr, "OOM in as_keygen_preenc(ei)\n"); abort(); }
+    poly_1d_init(ei, K);
+    for (int i = 0; i < K; i++) {
+        gaussian_sampler_y(ei[i].coeffs, N);
+        poly_reduce(&ei[i]);
+    }
+
+    // yi = INTT( sum_j As[i][j] ⊙ si[j] ) + ei
+    for (int i = 0; i < K; i++) poly_zero(&yi[i]);
+
+    poly tmp;
+    poly_init(&tmp);
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < L; j++) {
+            poly_pointwise_montgomery(&tmp, &As[i][j], &si[j]);
+            poly_add(&yi[i], &yi[i], &tmp);
+        }
+        poly_invntt_tomont(&yi[i]);
+        poly_reduce(&yi[i]);
+        poly_add(&yi[i], &yi[i], &ei[i]);  // add noise in time domain
+        poly_reduce(&yi[i]);
+    }
+    poly_clear(&tmp);
+
+    // Hash yi with H0
+    Hash(yi, h_yi);
+
+    // Free temp
+    poly_1d_clear(ei, K);
+    free(ei);
+}
+
+// ===== Encryption-only stage =====
+void as_keygen_encrypt_only(
+    ctx_t *ctx,       // ctx->u: [LHAT], ctx->v: [M], initialized
+    poly (*Ae)[LHAT], // [KHAT][LHAT]
+    poly (*Be)[M],    // [KHAT][M]
+    poly *si)         // [L], NTT domain (as produced by as_keygen_preenc)
+{
+    encrypt_1d(ctx->u, ctx->v, Ae, Be, si);
 }
 
 void as_keygen_2(
@@ -534,7 +591,7 @@ void as_keygen_2(
     for (int i = 0; i < USERS; i++)
     {
         uint8_t h_y[32];
-        H0(yi[i], h_y); // yi[i] is poly[K]
+        Hash(yi[i], h_y); // yi[i] is poly[K]
         // Hashes will not match with dummy vars for benchmarking
         if (memcmp(h_y, h_yi[i], 32) != 0)
         {
@@ -578,6 +635,74 @@ void as_keygen_2(
     poly_1d_clear(y, K);
     free(y);
 }
+void as_sign_r1(
+    poly (*As)[L],     // [K][L], NTT domain
+    uint8_t h_w[32],   // output hash of w
+    poly **r_out)      // output: allocated r[M] (NTT domain)
+{
+    // Allocate r ∈ poly[M] and w ∈ poly[K]
+    poly *r = (poly*)malloc(sizeof(poly) * M);
+    poly *w = (poly*)malloc(sizeof(poly) * K);
+    if (!r || !w) { fprintf(stderr, "alloc failed in as_sign_r1\n"); exit(1); }
+    poly_1d_init(r, M);
+    poly_1d_init(w, K);
+
+    // Sample r for first L slots (NTT), pad [L..M-1] with zeros then NTT
+    for (int i = 0; i < L; i++) {
+        gaussian_sampler_w(r[i].coeffs, N);
+        poly_reduce(&r[i]);
+        poly_ntt(&r[i]);
+    }
+    for (int i = L; i < M; i++) {
+        poly_zero(&r[i]);
+        poly_ntt(&r[i]); // keep domain consistent
+    }
+
+    // Compute w = A * r + e'
+    poly tmp; poly_init(&tmp);
+    for (int i = 0; i < K; i++) {
+        poly_zero(&w[i]); // accumulator in NTT domain
+        for (int j = 0; j < L; j++) {
+            poly_zero(&tmp);
+            poly_pointwise_montgomery(&tmp, &As[i][j], &r[j]);
+            poly_add(&w[i], &w[i], &tmp);
+        }
+        poly_reduce(&w[i]);
+        poly_invntt_tomont(&w[i]);     // to time domain
+
+        // Add e' (time domain)
+        poly noise; poly_init(&noise);
+        gaussian_sampler_w(noise.coeffs, N);
+        poly_reduce(&noise);
+        poly_add(&w[i], &w[i], &noise);
+        poly_reduce(&w[i]);
+        poly_clear(&noise);
+    }
+    poly_clear(&tmp);
+
+    // Hash w -> h_w
+    Hash(w, h_w); // (ensure your Hash/H1 uses the fixed-width mpz_export version)
+
+    // Cleanup w, keep r for the caller
+    poly_1d_clear(w, K); free(w);
+    *r_out = r; // caller (or as_sign_r2) will clear+free r
+}
+
+void as_sign_r2(
+    poly (*Ae)[LHAT],  // [KHAT][LHAT]
+    poly (*Be)[M],     // [KHAT][M]
+    poly *u,           // [LHAT], initialized polys
+    poly *v,           // [M],    initialized polys
+    poly *r,           // [M], NTT domain (from as_sign_r1)
+    int  want_free_r)  // if non-zero, this clears+frees r after encrypt
+{
+    encrypt_1d(u, v, Ae, Be, r);
+
+    if (want_free_r) {
+        poly_1d_clear(r, M);
+        free(r);
+    }
+}
 
 void as_sign_1(
     poly (*As)[L],    // [K][L]
@@ -615,7 +740,7 @@ void as_sign_1(
             poly_zero(&tmp);
             poly_pointwise_montgomery(&tmp, &As[i][j], &r[j]);
             poly_add(&w[i], &w[i], &tmp);
-            poly_reduce(&w[i]);
+            // poly_reduce(&w[i]);
         }
 
         poly_reduce(&w[i]);
@@ -634,7 +759,7 @@ void as_sign_1(
 
     // Compute h_w = H1(w)
     uint8_t h_w[32];
-    H1(w, h_w); // w is an array of poly[K]
+    Hash(w, h_w); // w is an array of poly[K]
 
     // Encrypt r under Ae, Be
     encrypt_1d(u, v, Ae, Be, r);
@@ -729,15 +854,6 @@ void as_sign_2(
     int user,
     int32_t *users)
 {
-    // Input is data from first signing function (needs to be done by all signers)
-    // So far OK, next step need to be done after all encrypt steps for all parties.
-
-    // Compute NIZK proof of correct encryption of r
-    // Will not do in this implementation
-
-    // Check h_wj = H1(j, w_j) for all j != i
-    // TODO ?
-
     // Compute w = sum(w_i) for all i \in U
     // Compute rounded w, round by q_w
     poly w[K];
@@ -768,10 +884,6 @@ void as_sign_2(
     compute_challenge(c, A, yprime, w, mu);
 
     // Compute ctx_z = c * ctx_s + sum(ctx_rj) for all j \in U
-    // Compute summation
-    // poly_1d_init(ctx_z.u, LHAT);
-    // poly_1d_init(ctx_z.v, M);
-
     for (int i = 0; i < THRESHOLD; i++)
     {
         for (int j = 0; j < LHAT; j++)
@@ -789,24 +901,28 @@ void as_sign_2(
     poly tmp;
     poly_init(&tmp);
     // Compute c * ctx_s
-    for (int i = 0; i < M; i++)
+    // for (int i = 0; i < M; i++) // M = LHAT here
+    // {
+    //     poly_zero(&tmp);
+    //     poly_pointwise_montgomery(&tmp, c, &v_s[i]);
+    //     poly_add(&v_z[i], &v_z[i], &tmp);
+    //     poly_reduce(&v_z[i]);
+    // }
+    for (int i = 0; i < LHAT; i++)
     {
         poly_zero(&tmp);
         poly_pointwise_montgomery(&tmp, c, &v_s[i]);
         poly_add(&v_z[i], &v_z[i], &tmp);
         poly_reduce(&v_z[i]);
-    }
-    for (int i = 0; i < LHAT; i++)
-    {
         poly_zero(&tmp);
-        poly_pointwise_montgomery(&tmp, &c, &u_s[i]);
+        poly_pointwise_montgomery(&tmp, c, &u_s[i]);
         poly_add(&u_z[i], &u_z[i], &tmp);
         poly_reduce(&u_z[i]);
     }
 
     poly_clear(&tmp);
     // Compute ds_i = tdec(ctx_z, sk_i, U)
-    tdecrypt_1d(dsi, ski, u_z, user, users, THRESHOLD);
+    // tdecrypt_1d(dsi, ski, u_z, user, users, THRESHOLD);
 }
 
 void as_sign_2_old(
@@ -904,7 +1020,7 @@ void as_sign_2_old(
     tdecrypt_1d(dsi, ski, ctx_z.u, user, users, THRESHOLD);
 }
 
-void as_sign_3(
+void as_sign_3_old(
     ctx_t *ctx_z,         // ctx_z->v [M]
     const pks_t *pks,     // pks->A [K][L]
     sig_t *sig,           // sig->c, sig->z [L], sig->h [K]
@@ -973,7 +1089,7 @@ void as_sign_3(
     free(t);
 }
 
-int as_verify(
+int as_verify_old(
     sig_t *sig,
     pks_t *pks,
     poly *mu,

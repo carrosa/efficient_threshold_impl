@@ -534,34 +534,93 @@ void H1(
     shake256_squeeze(hash, 32, &state);
     free(buf);
 }
-
-void H0(
-    poly arr[K],
-    uint8_t *hash)
+void Hash(poly arr[K], uint8_t *hash)
 {
     keccak_state state;
     shake256_init(&state);
 
-    size_t coeff_bytes = (mpz_sizeinbase(GMP_Q, 2) + 7) / 8; // Ceiling of bits to bytes
-    size_t poly_bytes = N * coeff_bytes;
-    size_t total_len = K * poly_bytes;
+    // Use the actual modulus used by your polys:
+    // if your code uses GMP_q elsewhere, use that here too.
+    const mpz_t *QQ = &GMP_q;
 
-    uint8_t *buf = malloc(total_len);
+    const size_t qbits        = mpz_sizeinbase(*QQ, 2);
+    const size_t coeff_bytes  = (qbits + 7) / 8;      // ceil(bits(q)/8)
+    const size_t poly_bytes   = N * coeff_bytes;
+    const size_t total_len    = K * poly_bytes;
+
+    uint8_t *buf = (uint8_t *)malloc(total_len);
+    if (!buf) return;  // or handle OOM
+
     size_t pos = 0;
+    for (size_t i = 0; i < K; i++) {
+        for (size_t j = 0; j < N; j++) {
+            uint8_t *slot = buf + pos + j * coeff_bytes;
+            memset(slot, 0, coeff_bytes);
 
-    for (size_t i = 0; i < K; i++)
-    {
-        for (size_t j = 0; j < N; j++)
-        {
-            mpz_export(buf + pos + j * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, arr[i].coeffs[j]);
+            // Ensure coefficient is in [0, q)
+            if (mpz_sgn(arr[i].coeffs[j]) < 0 || mpz_cmp(arr[i].coeffs[j], *QQ) >= 0) {
+                mpz_mod(arr[i].coeffs[j], arr[i].coeffs[j], *QQ);
+            }
+
+            // How many bytes would be written (with size=1)?
+            size_t written = 0;
+            mpz_export(NULL, &written, 1, 1, 1, 0, arr[i].coeffs[j]);
+
+            if (written > coeff_bytes) {
+                // Still too big: reduce again or treat as error
+                // (shouldn’t happen if coeffs < q and coeff_bytes = ceil(bits(q)/8))
+                // Handle as needed; here we clamp via mod and recompute.
+                mpz_mod(arr[i].coeffs[j], arr[i].coeffs[j], *QQ);
+                written = 0;
+                mpz_export(NULL, &written, 1, 1, 1, 0, arr[i].coeffs[j]);
+                if (written > coeff_bytes) {
+                    // Fatal invariant violation; bail gracefully
+                    // (or assert)
+                    free(buf);
+                    return;
+                }
+            }
+
+            // Left-pad into the fixed-width slot.
+            // We can pass NULL for countp now that we know it fits.
+            mpz_export(slot + (coeff_bytes - written), NULL, 1, 1, 1, 0, arr[i].coeffs[j]);
         }
         pos += poly_bytes;
     }
+
     shake256_absorb(&state, buf, total_len);
     shake256_finalize(&state);
     shake256_squeeze(hash, 32, &state);
     free(buf);
 }
+
+// void H0(
+//     poly arr[K],
+//     uint8_t *hash)
+// {
+//     keccak_state state;
+//     shake256_init(&state);
+
+//     size_t coeff_bytes = (mpz_sizeinbase(GMP_Q, 2) + 7) / 8; // Ceiling of bits to bytes
+//     size_t poly_bytes = N * coeff_bytes;
+//     size_t total_len = K * poly_bytes;
+
+//     uint8_t *buf = malloc(total_len);
+//     size_t pos = 0;
+
+//     for (size_t i = 0; i < K; i++)
+//     {
+//         for (size_t j = 0; j < N; j++)
+//         {
+//             mpz_export(buf + pos + j * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, arr[i].coeffs[j]);
+//         }
+//         pos += poly_bytes;
+//     }
+//     shake256_absorb(&state, buf, total_len);
+//     shake256_finalize(&state);
+//     shake256_squeeze(hash, 32, &state);
+//     free(buf);
+// }
 
 void H0_matrix(poly *arr, size_t rows, size_t cols, uint8_t *hash)
 {
@@ -588,7 +647,7 @@ void H0_matrix(poly *arr, size_t rows, size_t cols, uint8_t *hash)
     shake256_finalize(&state);
     shake256_squeeze(hash, 32, &state);
 
-    free(buf);
+    // free(buf);
 }
 
 void get_random_dummy_poly(poly *p)

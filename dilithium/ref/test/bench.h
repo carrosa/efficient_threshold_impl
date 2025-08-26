@@ -11,11 +11,6 @@
 
 #define CPU_FREQ 2600000000 // in Hz (Caroline PC, comment out if measuring runtime freq)
 
-#ifndef CPU_FREQ
-#define CPU_FREQ calibrate_cpu_freq_hz()
-#endif
-// #define CPU_FREQ 2294608000 // in Hz (NTNU Server)
-
 // How many times to run the benchmarks
 #define BENCH 10
 
@@ -30,7 +25,6 @@
     bench_print();
 
 #define BENCH_ONCE_W_ARGS(LABEL, FUNC, ...) \
-    printf("CPU_FREQ not defined, using runtime calibration: %llu Hz\n", CPU_FREQ); \
     BENCH_ONCE(LABEL, FUNC(__VA_ARGS__))
 
 #define BENCH_MANY(LABEL, FUNC)             \
@@ -45,6 +39,10 @@
     bench_after();                          \
     bench_compute(BENCH);                   \
     bench_print();
+
+
+#define BENCH_MANY_W_ARGS(LABEL, FUNC, ...) \
+    BENCH_MANY(LABEL, FUNC(__VA_ARGS__))
 
 #define BENCH_ONCE_WRAP(LABEL, FUNC, ...)           \
     static inline void __bench_wrapper_##FUNC(void) \

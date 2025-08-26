@@ -126,6 +126,53 @@ void clear_zetas(void)
         mpz_clear(zetas[i]);
     }
 }
+// Optional helper: fuse multiply + Montgomery reduction
+static inline void montgomery_mul(mpz_t r, mpz_srcptr x, mpz_srcptr y) {
+    mpz_mul(r, x, y);
+    montgomery_reduce(r, r);   // r := MontRed(r)
+}
+
+/*************************************************
+ * Name:        ntt
+ * Description: Forward NTT, in-place. No modular reduction after +/- (lazy).
+ *              Output is in bit-reversed order.
+ **************************************************/
+void ntt(mpz_t a[N])
+{
+    unsigned int len, start, j, k = 0;
+
+    // Pre-size temporaries to avoid realloc in the loop (t, prod, tmp).
+    // Choose bit sizes appropriate for your modulus q and products.
+    mpz_t t, prod, tmp;
+    // If you know q ~ b bits, use ~b for tmp/t and ~(2b+logN) for prod.
+    mpz_init2(t,   256);   // adjust to >= bits(q) + headroom
+    mpz_init2(prod,512);   // adjust to >= 2*bits(q) + headroom
+    mpz_init2(tmp, 256);
+
+    for (len = N >> 1; len > 0; len >>= 1) {
+        for (start = 0; start < N; start += (len << 1)) {
+            mpz_srcptr zeta = zetas[++k];            // take pointer; no copy
+            for (j = start; j < start + len; ++j) {
+                // t = zeta * a[j+len] (Montgomery)
+                // Option A (fused):
+                montgomery_mul(t, zeta, a[j + len]);
+                // Option B (if you prefer to keep prod):
+                // mpz_mul(prod, zeta, a[j + len]);
+                // montgomery_reduce(t, prod);
+
+                // Butterfly:
+                // tmp = a[j] + t
+                mpz_add(tmp, a[j], t);
+                // a[j+len] = a[j] - t
+                mpz_sub(a[j + len], a[j], t);
+                // a[j] = tmp
+                mpz_set(a[j], tmp);
+            }
+        }
+    }
+
+    mpz_clears(t, prod, tmp, NULL);
+}
 
 /*************************************************
  * Name:        ntt
@@ -133,41 +180,41 @@ void clear_zetas(void)
  * Description: Forward NTT, in-place. No modular reduction is performed after
  *              additions or subtractions. Output vector is in bitreversed order.
  *
- * Arguments:   - uint32_t p[N]: input/output coefficient array
+ * Arguments:   - mpz_t p[N]: input/output coefficient array
  **************************************************/
-void ntt(mpz_t a[N])
-{
-    unsigned int len, start, j, k;
-    mpz_t t, zeta, prod;
-    mpz_inits(t, zeta, prod, NULL);
+// void ntt(mpz_t a[N])
+// {
+//     unsigned int len, start, j, k;
+//     mpz_t t, zeta, prod;
+//     mpz_inits(t, zeta, prod, NULL);
 
-    k = 0;
-    for (len = N / 2; len > 0; len >>= 1)
-    {
-        for (start = 0; start < N; start = j + len)
-        {
-            k++;
-            mpz_set(zeta, zetas[k]);
-            for (j = start; j < start + len; ++j)
-            {
-                mpz_mul(prod, zeta, a[j + len]);
-                montgomery_reduce(t, prod);
+//     k = 0;
+//     for (len = N / 2; len > 0; len >>= 1)
+//     {
+//         for (start = 0; start < N; start = j + len)
+//         {
+//             k++;
+//             mpz_set(zeta, zetas[k]);
+//             for (j = start; j < start + len; ++j)
+//             {
+//                 mpz_mul(prod, zeta, a[j + len]);
+//                 montgomery_reduce(t, prod);
 
-                mpz_t tmp;
-                mpz_init(tmp);
-                mpz_set(tmp, a[j]);
+//                 mpz_t tmp;
+//                 mpz_init(tmp);
+//                 mpz_set(tmp, a[j]);
 
-                // a[j] = tmp + t
-                mpz_add(a[j], tmp, t);
-                // a[j+len] = tmp - t
-                mpz_sub(a[j + len], tmp, t);
+//                 // a[j] = tmp + t
+//                 mpz_add(a[j], tmp, t);
+//                 // a[j+len] = tmp - t
+//                 mpz_sub(a[j + len], tmp, t);
 
-                mpz_clear(tmp);
-            }
-        }
-    }
-    mpz_clears(t, zeta, prod, NULL);
-}
+//                 mpz_clear(tmp);
+//             }
+//         }
+//     }
+//     mpz_clears(t, zeta, prod, NULL);
+// }
 
 /*************************************************
  * Name:        invntt_tomont

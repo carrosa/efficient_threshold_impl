@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.sage": "python",
+        "gmp.h": "c",
+        "cpu_freq_runtime.h": "c"
+    }
+}
