@@ -1187,7 +1187,7 @@ int main(void)
     init_params();
     init_zetas();
 
-    // bench_dkg();
+    bench_dkg();
     // bench_keygen();
     // bench_as_keygen_1(2);
     // bench_as_keygen_preenc(10);
@@ -1195,7 +1195,7 @@ int main(void)
     // bench_as_keygen_2(10);
     // bench_as_sign_r1(1);
     // bench_as_sign_r2(1);
-    bench_as_sign_r3(1);
+    // bench_as_sign_r3(1);
 
     free_params();
     clear_zetas();
