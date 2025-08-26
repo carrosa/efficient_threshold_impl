@@ -15,8 +15,6 @@ void init_params(void)
     mpz_set_str(GMP_MONT, MONT, 10);
     mpz_set_str(GMP_DIV_QINV, DIV_QINV, 10);
     mpz_set_str(GMP_ROOT_OF_UNITY, ROOT_OF_UNITY, 10);
-    mpz_set_str(GMP_Q_Y, Q_Y, 10);
-    mpz_set_str(GMP_Q_W, Q_W, 10);
     mpz_set_str(GMP_KAPPA_Y, KAPPA_Y_STR, 10);
     mpz_set_str(GMP_KAPPA_W, KAPPA_W_STR, 10);
 }

@@ -239,12 +239,14 @@ void as_keygen_2(
 //     poly Be[KHAT][M],
 //     ctx_t ctx_si);
 
+
 void as_sign_1(
     poly (*As)[L],    // [K][L]
     poly (*Ae)[LHAT], // [KHAT][LHAT]
     poly (*Be)[M],    // [KHAT][M]
     poly *u,          // [LHAT]
-    poly *v           // [M]
+    poly *v,           // [M]
+    poly *r // M
 );
 
 void as_sign_1_old(
@@ -273,7 +275,7 @@ void as_sign_2(
     int user,
     int32_t *users);
 
-void as_sign_2_old(
+void as_sign_round3(
     sig_t *sig,
     pks_t pks,
     ctx_t ctx_r[THRESHOLD], // Should be THRESHOLD?
@@ -295,7 +297,7 @@ void as_sign_2_old(
 //     poly dsi[THRESHOLD][M],
 //     const int32_t *users); // USERS
 
-void as_sign_3_old(
+void as_sign_comb(
     ctx_t *ctx_z,          // ctx_z->v [M]
     const pks_t *pks,      // pks->A [K][L]
     sig_t *sig,            // sig->c, sig->z [L], sig->h [K]

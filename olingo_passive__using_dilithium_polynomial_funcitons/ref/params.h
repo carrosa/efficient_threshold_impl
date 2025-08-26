@@ -12,8 +12,8 @@
 #define D 13
 #define SAMPLEBYTES 15
 
-#define THRESHOLD 127
-#define USERS 128
+#define THRESHOLD 1023
+#define USERS 1024
 
 #define N 256
 #define MONT_BITS 128
@@ -45,10 +45,10 @@ void free_params(void);
 #define LHAT 22
 #define M 22
 
-#define KAPPA_Y 37
-#define KAPPA_Y_STR "137438953472"
-#define KAPPA_W 40
-#define KAPPA_W_STR "1099511627776"
+#define KAPPA_Y 20
+#define KAPPA_Y_STR "1048576"
+#define KAPPA_W 37
+#define KAPPA_W_STR "137438953472"
 extern mpz_t GMP_KAPPA_Y;
 extern mpz_t GMP_KAPPA_W;
 
@@ -57,15 +57,10 @@ extern mpz_t GMP_KAPPA_W;
 
 #define SIGMA_BINARY sqrt(2/3)
 #define SIGMA_SMALL (1 << 20)
-#define SIGMA_LARGE (1 << 38)
+#define SIGMA_LARGE (1 << 37)
 
 #define CTILDEBYTES 32
 #define TAU 60
-
-#define Q_Y "44601490397061246283071436545296723011960832"
-#define Q_W "44601490397061246283071436545296723011960832" // USE CORRECT ONE
-extern mpz_t GMP_Q_Y;
-extern mpz_t GMP_Q_W;
 
 #define ETA 2
 

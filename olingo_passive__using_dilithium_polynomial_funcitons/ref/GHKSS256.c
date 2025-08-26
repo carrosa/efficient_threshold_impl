@@ -388,70 +388,143 @@ void poly_vec_norm2(mpz_t out, poly *v, int len)
     mpz_clear(tmp);
 }
 
+// Safe, streaming version: no giant buf; fixed-width mpz_export with left padding
 void compute_challenge(
     poly *c,
-    poly A[K][L],
-    poly yprime[K],
-    poly wprime[K],
-    poly mu[L])
+    poly (*A)[L],     // [K][L]
+    poly yprime[K],   // [K]
+    poly wprime[K],   // [K]
+    poly mu[L])       // [L]
 {
-    // Determine serialization size (e.g., bytes per mpz_t coefficient)
-    size_t coeff_bytes = (mpz_sizeinbase(GMP_q, 2) + 7) / 8; // Ceiling of bits to bytes
-    size_t poly_bytes = N * coeff_bytes;
-    size_t total_len = (K * L + K + K + L) * poly_bytes;
+    // Use the SAME modulus you use for coefficients everywhere
+    const mpz_t *QQ = &GMP_q;
 
-    // Serialize inputs
-    uint8_t *buf = malloc(total_len);
-    size_t pos = 0;
-    // Serialize A
+    const size_t qbits       = mpz_sizeinbase(*QQ, 2);
+    const size_t coeff_bytes = (qbits + 7) / 8;   // ceil(bits(q)/8)
+
+    keccak_state st;
+    shake256_init(&st);
+
+    // Fixed-size slot for one coefficient
+    uint8_t *slot = (uint8_t*)malloc(coeff_bytes);
+    if (!slot) { fprintf(stderr, "OOM in compute_challenge\n"); abort(); }
+
+    // Helper lambda-ish (C version): export coeff in [0,q) into fixed-width slot
+    #define EXPORT_COEFF_FIXED(gmpz_) do {                                   \
+        /* ensure in [0,q) */                                                \
+        if (mpz_sgn((gmpz_)) < 0 || mpz_cmp((gmpz_), *QQ) >= 0)               \
+            mpz_mod((gmpz_), (gmpz_), *QQ);                                   \
+        size_t written = 0;                                                  \
+        mpz_export(NULL, &written, 1, 1, 1, 0, (gmpz_));                     \
+        if (written > coeff_bytes) {                                         \
+            /* should not happen if < q; clamp and recompute */              \
+            mpz_mod((gmpz_), (gmpz_), *QQ);                                   \
+            written = 0;                                                     \
+            mpz_export(NULL, &written, 1, 1, 1, 0, (gmpz_));                 \
+        }                                                                     \
+        memset(slot, 0, coeff_bytes);                                        \
+        mpz_export(slot + (coeff_bytes - written), NULL, 1, 1, 1, 0, (gmpz_)); \
+        shake256_absorb(&st, slot, coeff_bytes);                             \
+    } while (0)
+
+    // Serialize A (K x L polynomials)
     for (int i = 0; i < K; i++)
-    {
         for (int j = 0; j < L; j++)
-        {
             for (int k = 0; k < N; k++)
-            {
-                mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, A[i][j].coeffs[k]);
-            }
-            pos += poly_bytes;
-        }
-    }
-    // Serialize yprime
+                EXPORT_COEFF_FIXED(A[i][j].coeffs[k]);
+
+    // Serialize yprime (K polys)
     for (int i = 0; i < K; i++)
-    {
         for (int k = 0; k < N; k++)
-        {
-            mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, yprime[i].coeffs[k]);
-        }
-        pos += poly_bytes;
-    }
-    // Serialize wprime
+            EXPORT_COEFF_FIXED(yprime[i].coeffs[k]);
+
+    // Serialize wprime (K polys)
     for (int i = 0; i < K; i++)
-    {
         for (int k = 0; k < N; k++)
-        {
-            mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, wprime[i].coeffs[k]);
-        }
-        pos += poly_bytes;
-    }
-    // Serialize mu
+            EXPORT_COEFF_FIXED(wprime[i].coeffs[k]);
+
+    // Serialize mu (L polys)
     for (int i = 0; i < L; i++)
-    {
         for (int k = 0; k < N; k++)
-        {
-            mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, mu[i].coeffs[k]);
-        }
-        pos += poly_bytes;
-    }
+            EXPORT_COEFF_FIXED(mu[i].coeffs[k]);
 
-    // Hash with SHAKE-256 (Dilithium uses this)
-    uint8_t hash[32]; // Adjust size as needed
-    shake256(hash, sizeof(hash), buf, total_len);
+    #undef EXPORT_COEFF_FIXED
 
-    // Sample challenge polynomial (adapt Dilithium's poly_challenge)
+    // Finalize and squeeze 32 bytes (adjust if your poly_challenge expects a different size)
+    uint8_t hash[32];
+    shake256_finalize(&st);
+    shake256_squeeze(hash, sizeof hash, &st);
+
     poly_challenge(c, hash);
 
-    free(buf);
+    free(slot);
 }
+
+
+// void compute_challenge(
+//     poly *c,
+//     poly A[K][L],
+//     poly yprime[K],
+//     poly wprime[K],
+//     poly mu[L])
+// {
+//     // Determine serialization size (e.g., bytes per mpz_t coefficient)
+//     size_t coeff_bytes = (mpz_sizeinbase(GMP_q, 2) + 7) / 8; // Ceiling of bits to bytes
+//     size_t poly_bytes = N * coeff_bytes;
+//     size_t total_len = (K * L + K + K + L) * poly_bytes;
+
+//     // Serialize inputs
+//     uint8_t *buf = malloc(total_len);
+//     size_t pos = 0;
+//     // Serialize A
+//     for (int i = 0; i < K; i++)
+//     {
+//         for (int j = 0; j < L; j++)
+//         {
+//             for (int k = 0; k < N; k++)
+//             {
+//                 mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, A[i][j].coeffs[k]);
+//             }
+//             pos += poly_bytes;
+//         }
+//     }
+//     // Serialize yprime
+//     for (int i = 0; i < K; i++)
+//     {
+//         for (int k = 0; k < N; k++)
+//         {
+//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, yprime[i].coeffs[k]);
+//         }
+//         pos += poly_bytes;
+//     }
+//     // Serialize wprime
+//     for (int i = 0; i < K; i++)
+//     {
+//         for (int k = 0; k < N; k++)
+//         {
+//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, wprime[i].coeffs[k]);
+//         }
+//         pos += poly_bytes;
+//     }
+//     // Serialize mu
+//     for (int i = 0; i < L; i++)
+//     {
+//         for (int k = 0; k < N; k++)
+//         {
+//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, mu[i].coeffs[k]);
+//         }
+//         pos += poly_bytes;
+//     }
+
+//     // Hash with SHAKE-256 (Dilithium uses this)
+//     uint8_t hash[32]; // Adjust size as needed
+//     shake256(hash, sizeof(hash), buf, total_len);
+
+//     // Sample challenge polynomial (adapt Dilithium's poly_challenge)
+//     poly_challenge(c, hash);
+
+//     free(buf);
+// }
 
 void as_keygen_1(
     poly (*As)[L],    // [K][L]
@@ -709,13 +782,12 @@ void as_sign_1(
     poly (*Ae)[LHAT], // [KHAT][LHAT]
     poly (*Be)[M],    // [KHAT][M]
     poly *u,          // [LHAT]
-    poly *v           // [M]
+    poly *v,           // [M]
+    poly *r // M
 )
 {
     // Allocate r ∈ poly[M] and w ∈ poly[K]
-    poly *r = malloc(sizeof(poly[M]));
     poly *w = malloc(sizeof(poly[K]));
-    poly_1d_init(r, M);
     poly_1d_init(w, K);
 
     // Sample r for first L slots, pad with 0s for M-L
@@ -762,13 +834,27 @@ void as_sign_1(
     Hash(w, h_w); // w is an array of poly[K]
 
     // Encrypt r under Ae, Be
-    encrypt_1d(u, v, Ae, Be, r);
+    // encrypt_1d(u, v, Ae, Be, r);
 
     // Cleanup
-    poly_1d_clear(r, M);
     poly_1d_clear(w, K);
-    free(r);
     free(w);
+}
+
+void as_sign_round2(
+    poly (*Ae)[LHAT], // [KHAT][LHAT]
+    poly (*Be)[M],    // [KHAT][M]
+    poly *u,          // [LHAT]
+    poly *v,           // [M]
+    poly *r // M
+)
+{
+
+    // Encrypt r under Ae, Be
+    encrypt_1d(u, v, Ae, Be, r);
+    // Cleanup
+    poly_1d_clear(r, M);
+    free(r);
 }
 
 void as_sign_1_old(
@@ -922,10 +1008,10 @@ void as_sign_2(
 
     poly_clear(&tmp);
     // Compute ds_i = tdec(ctx_z, sk_i, U)
-    // tdecrypt_1d(dsi, ski, u_z, user, users, THRESHOLD);
+    tdecrypt_1d(dsi, ski, u_z, user, users, THRESHOLD);
 }
 
-void as_sign_2_old(
+void as_sign_round3(
     sig_t *sig,
     pks_t pks,
     ctx_t ctx_r[THRESHOLD],
@@ -939,15 +1025,6 @@ void as_sign_2_old(
     int user,
     int32_t users[USERS])
 {
-    // Input is data from first signing function (needs to be done by all signers)
-    // So far OK, next step need to be done after all encrypt steps for all parties.
-
-    // Compute NIZK proof of correct encryption of r
-    // Will not do in this implementation
-
-    // Check h_wj = H1(j, w_j) for all j != i
-    // TODO ?
-
     // Compute w = sum(w_i) for all i \in U
     // Compute rounded w, round by q_w
     poly w[K];
@@ -1020,7 +1097,7 @@ void as_sign_2_old(
     tdecrypt_1d(dsi, ski, ctx_z.u, user, users, THRESHOLD);
 }
 
-void as_sign_3_old(
+void as_sign_comb(
     ctx_t *ctx_z,         // ctx_z->v [M]
     const pks_t *pks,     // pks->A [K][L]
     sig_t *sig,           // sig->c, sig->z [L], sig->h [K]
