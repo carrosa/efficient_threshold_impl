@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!-- saved from url=(0071)file:///home/caroline/Github/lazer/docs/build/html/getting_started.html -->
+<html lang="en" data-content_root="./"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Getting started — LaZer 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="./lazer_getting_started_files/pygments.css">
+    <link rel="stylesheet" type="text/css" href="./lazer_getting_started_files/alabaster.css">
+    <script src="./lazer_getting_started_files/documentation_options.js"></script>
+    <script src="./lazer_getting_started_files/doctools.js"></script>
+    <script src="./lazer_getting_started_files/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="file:///home/caroline/Github/lazer/docs/build/html/genindex.html">
+    <link rel="search" title="Search" href="file:///home/caroline/Github/lazer/docs/build/html/search.html">
+    <link rel="next" title="Python module" href="file:///home/caroline/Github/lazer/docs/build/html/python_module.html">
+    <link rel="prev" title="Welcome to LaZer" href="file:///home/caroline/Github/lazer/docs/build/html/index.html">
+   
+  <link rel="stylesheet" href="./lazer_getting_started_files/custom.css" type="text/css">
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting started<a class="headerlink" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#getting-started" title="Link to this heading">¶</a></h1>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#prerequisites" title="Link to this heading">¶</a></h2>
+<p>To build the lazer library, you need a C compiler (<a class="reference external" href="https://gcc.gnu.org/">gcc</a> or <a class="reference external" href="https://clang.llvm.org/">clang</a>), the make utility and the <a class="reference external" href="https://gmplib.org/">gmp</a> and <a class="reference external" href="https://www.mpfr.org/">mpfr</a> development packages.</p>
+<p>To work with the python module, you need <a class="reference external" href="https://www.python.org/">python3</a> (at least version 3.10) and the <a class="reference external" href="https://cffi.readthedocs.io/en/stable/">cffi</a> package.</p>
+<p>To generate proof system parameters, you need the <a class="reference external" href="https://www.sagemath.org/">SageMath</a> computer algebra system.</p>
+<p>To build this documentation, you need the <a class="reference external" href="https://pypi.org/project/Sphinx/">sphinx</a> and the <a class="reference external" href="https://pypi.org/project/sphinxcontrib-bibtex/">sphinxcontrib-bibtex</a> packages.</p>
+<p>Performance is currently only optimized for CPUs with the AVX-512 instruction set extension.</p>
+<p>The functions for creating succinct proofs require AVX-512. Those functions will not be available on systems lacking AVX-512.</p>
+</section>
+<section id="building">
+<h2>Building<a class="headerlink" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#building" title="Link to this heading">¶</a></h2>
+<p>To build the library, go to the lazer directory and run make:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd lazer</span>
+<span class="go">make</span>
+</pre></div>
+</div>
+<p>To try to build the library including the functions requiring AVX-512, do:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd lazer</span>
+<span class="go">make all</span>
+</pre></div>
+</div>
+<p>To build the python module, go to the python subdirectory and run make:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd lazer/python</span>
+<span class="go">make</span>
+</pre></div>
+</div>
+<p>To build this documentation, go to the docs subdirectory and run make:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd lazer/docs</span>
+<span class="go">make html</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="file:///home/caroline/Github/lazer/docs/build/html/index.html">LaZer</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="file:///home/caroline/Github/lazer/docs/build/html/getting_started.html#building">Building</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="file:///home/caroline/Github/lazer/docs/build/html/python_module.html">Python module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="file:///home/caroline/Github/lazer/docs/build/html/references.html">References</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="file:///home/caroline/Github/lazer/docs/build/html/index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="file:///home/caroline/Github/lazer/docs/build/html/index.html" title="previous chapter">Welcome to LaZer</a></li>
+      <li>Next: <a href="file:///home/caroline/Github/lazer/docs/build/html/python_module.html" title="next chapter">Python module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: block;" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="file:///home/caroline/Github/lazer/docs/build/html/search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input type="submit" value="Go">
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      ©2024.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io/">Alabaster 0.7.16</a>
+      
+      |
+      <a href="file:///home/caroline/Github/lazer/docs/build/html/_sources/getting_started.rst.txt" rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  
+</body></html>
