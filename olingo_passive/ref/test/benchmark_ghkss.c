@@ -684,11 +684,9 @@ int main(void)
     init_zetas();
 
     // bench_dkg();
-    // bench_keygen();
-    // bench_as_keygen_1(1);
     // bench_as_keygen_preenc(10);
     // bench_as_keygen_encrypt_only(10);
-    // bench_as_keygen_2(10);
+    bench_as_keygen_2(10);
 
     free_params();
     clear_zetas();

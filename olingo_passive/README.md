@@ -1,3 +1,12 @@
+# Passive Olingo
+The code for the passively secure Olingo scheme is based on the Dilithium code base. The original README for Dilithium is below.
+For the implementation we have used Dilithium's polynomials and ntt functions with GMP integers instead of the int64_t type in our implementation.
+
+Passive signing benchmarks can be generated with `make ghkss`, from `test_GHKSS256.c`.
+Passive DKG and keygen benchmarks can be generated with `make bench`, from `benchmark_ghkss.c`.
+Both from within the `ref` folder. The binaries will be output into `ref/test`.
+
+
 # Dilithium
 
 [![Build Status](https://travis-ci.org/pq-crystals/dilithium.svg?branch=master)](https://travis-ci.org/pq-crystals/dilithium) [![Coverage Status](https://coveralls.io/repos/github/pq-crystals/dilithium/badge.svg?branch=master)](https://coveralls.io/github/pq-crystals/dilithium?branch=master)
