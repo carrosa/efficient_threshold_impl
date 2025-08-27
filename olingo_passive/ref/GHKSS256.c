@@ -461,71 +461,6 @@ void compute_challenge(
 }
 
 
-// void compute_challenge(
-//     poly *c,
-//     poly A[K][L],
-//     poly yprime[K],
-//     poly wprime[K],
-//     poly mu[L])
-// {
-//     // Determine serialization size (e.g., bytes per mpz_t coefficient)
-//     size_t coeff_bytes = (mpz_sizeinbase(GMP_q, 2) + 7) / 8; // Ceiling of bits to bytes
-//     size_t poly_bytes = N * coeff_bytes;
-//     size_t total_len = (K * L + K + K + L) * poly_bytes;
-
-//     // Serialize inputs
-//     uint8_t *buf = malloc(total_len);
-//     size_t pos = 0;
-//     // Serialize A
-//     for (int i = 0; i < K; i++)
-//     {
-//         for (int j = 0; j < L; j++)
-//         {
-//             for (int k = 0; k < N; k++)
-//             {
-//                 mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, A[i][j].coeffs[k]);
-//             }
-//             pos += poly_bytes;
-//         }
-//     }
-//     // Serialize yprime
-//     for (int i = 0; i < K; i++)
-//     {
-//         for (int k = 0; k < N; k++)
-//         {
-//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, yprime[i].coeffs[k]);
-//         }
-//         pos += poly_bytes;
-//     }
-//     // Serialize wprime
-//     for (int i = 0; i < K; i++)
-//     {
-//         for (int k = 0; k < N; k++)
-//         {
-//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, wprime[i].coeffs[k]);
-//         }
-//         pos += poly_bytes;
-//     }
-//     // Serialize mu
-//     for (int i = 0; i < L; i++)
-//     {
-//         for (int k = 0; k < N; k++)
-//         {
-//             mpz_export(buf + pos + k * coeff_bytes, NULL, 1, coeff_bytes, 1, 0, mu[i].coeffs[k]);
-//         }
-//         pos += poly_bytes;
-//     }
-
-//     // Hash with SHAKE-256 (Dilithium uses this)
-//     uint8_t hash[32]; // Adjust size as needed
-//     shake256(hash, sizeof(hash), buf, total_len);
-
-//     // Sample challenge polynomial (adapt Dilithium's poly_challenge)
-//     poly_challenge(c, hash);
-
-//     free(buf);
-// }
-
 void as_keygen_1(
     poly (*As)[L],    // [K][L]
     poly (*Ae)[LHAT], // [KHAT][LHAT]
@@ -1054,10 +989,6 @@ void as_sign_round3(
     // Compute c = H2(w, pk_S, mu)
     compute_challenge(&sig->c, pks.A, pks.yprime, w, mu);
 
-    // Compute ctx_z = c * ctx_s + sum(ctx_rj) for all j \in U
-    // Compute summation
-    // poly_1d_init(ctx_z.u, LHAT);
-    // poly_1d_init(ctx_z.v, M);
 
     for (int i = 0; i < THRESHOLD; i++)
     {
@@ -1172,8 +1103,6 @@ int as_verify_old(
     poly *mu,
     int Bz)
 {
-    // Check ||z, 2^kw * h|| <= Bz
-    // TODO
 
     // Compute w* = [As * z -2^{kappa_y} * c * yprime]_qw
     poly wstar[K];
@@ -1289,69 +1218,6 @@ void dk_gen_1(
     H0_matrix(Bi, KHAT, M, h_Bi);
 }
 
-void dk_gen_2_gen_sharing_polys(poly (*P_coeff_S)[LHAT][M],
-                                poly (*P_coeff_E)[KHAT][M],
-                                poly (*Si)[M],
-                                poly (*Ei)[M])
-{
-    gen_sharing_poly(P_coeff_S, Si);
-    gen_sharing_poly(P_coeff_E, Ei);
-}
-
-void dk_gen_2_compute_share(
-    poly (*Si)[M], // [LHAT][M]
-    poly (*Ei)[M], // [LHAT][M]
-    poly (*Share_S)[M],
-    poly (*Share_E)[M],
-    poly (*P_coeff_S)[LHAT][M],
-    poly (*P_coeff_E)[KHAT][M],
-    int32_t *users, int32_t user) // users[USERS]
-{
-    // Generate secret shares for each user
-    compute_share(Share_S, P_coeff_S, users[user]);
-    compute_share(Share_E, P_coeff_E, users[user]);
-}
-
-void dk_gen_2_with_share_1user(
-    poly (*Si)[M], // [LHAT][M]
-    poly (*Ei)[M], // [LHAT][M]
-    pke_t *pke,
-    poly (*Shares_S)[M], // [USERS][LHAT][M]
-    poly (*Shares_E)[M], // [USERS][KHAT][M]
-    poly (*Bij)[M]       // [USERS][KHAT][M]
-    )                    // users[USERS]
-{
-    // Generate sharing polynomials from Si and Ei
-    // Generate secret shares for each user
-    // Compute Bij = A * Shares_S[u] + q * Shares_E[u]
-    for (int i = 0; i < KHAT; i++)
-    {
-        for (int k = 0; k < M; k++)
-        {
-            for (int j = 0; j < LHAT; j++)
-            {
-                poly tmp;
-                poly_init(&tmp);
-                poly_pointwise_montgomery(&tmp, &pke->A[i][j], &Shares_S[j][k]);
-                poly_add(&Bij[i][k], &Bij[i][k], &tmp);
-                poly_clear(&tmp);
-            }
-
-            poly_reduce(&Bij[i][k]);
-            poly_invntt_tomont(&Bij[i][k]);
-
-            // Add scaled noise
-            poly_scale(&Shares_E[i][k], GMP_q);
-            poly_reduce(&Shares_E[i][k]);
-            poly_add(&Bij[i][k], &Bij[i][k], &Shares_E[i][k]);
-            poly_reduce(&Bij[i][k]);
-        }
-    }
-
-    // Clear temporary sharing polynomials
-    poly_1d_clear(Bij, KHAT * M);
-    free(Bij);
-}
 
 void poly_matmul_acc(
     poly (*out)[M],  // [KHAT][M]
@@ -1438,106 +1304,6 @@ void dk_gen_2(
     free(Shares_S);
     free(Shares_E);
     free(Bij);
-}
-
-void dk_gen_2_old(
-    poly (*Si)[M], // [LHAT][M]
-    poly (*Ei)[M], // [LHAT][M]
-    pke_t *pke,
-    int32_t *users) // users[USERS]
-{
-    // Allocate sharing polynomial coefficients
-    poly(*P_coeff_S)[LHAT][M] = malloc(sizeof(poly) * THRESHOLD * LHAT * M);
-    poly(*P_coeff_E)[KHAT][M] = malloc(sizeof(poly) * THRESHOLD * KHAT * M);
-
-    // Since benchmarking not needed for other than computation, need to store and send in real application, will be big
-    poly(*Shares_S)[M] = malloc(sizeof(poly) * LHAT * M); // [LHAT][M]
-    poly(*Shares_E)[M] = malloc(sizeof(poly) * KHAT * M); // [KHAT][M]
-    poly(*Bij)[M] = malloc(sizeof(poly) * KHAT * M);      // [USERS][KHAT][M]
-
-    POLY_2D_INIT(Shares_S, LHAT, M);
-    POLY_2D_INIT(Shares_E, KHAT, M);
-    POLY_2D_INIT(Bij, KHAT, M);
-
-    // Initialize
-    POLY_3D_INIT(P_coeff_S, THRESHOLD, LHAT, M);
-    POLY_3D_INIT(P_coeff_E, THRESHOLD, KHAT, M);
-
-    // Generate sharing polynomials from Si and Ei
-    gen_sharing_poly(P_coeff_S, Si);
-    gen_sharing_poly(P_coeff_E, Ei);
-
-    // Generate secret shares for each user
-    for (int u = 0; u < USERS; u++)
-    {
-        compute_share_horner(Shares_S, P_coeff_S, users[u]);
-        compute_share_horner(Shares_E, P_coeff_E, users[u]);
-
-        // Compute Bij = A * Shares_S[u] + q * Shares_E[u]
-        for (int i = 0; i < KHAT; i++)
-        {
-            for (int k = 0; k < M; k++)
-            {
-                for (int j = 0; j < LHAT; j++)
-                {
-                    poly tmp;
-                    poly_init(&tmp);
-                    poly_pointwise_montgomery(&tmp, &pke->A[i][j], &Shares_S[j][k]);
-                    poly_add(&Bij[i][k], &Bij[i][k], &tmp);
-                    poly_clear(&tmp);
-                }
-
-                poly_reduce(&Bij[i][k]);
-                poly_invntt_tomont(&Bij[i][k]);
-
-                // Add scaled noise
-                poly_scale(&Shares_E[i][k], GMP_q);
-                poly_reduce(&Shares_E[i][k]);
-                poly_add(&Bij[i][k], &Bij[i][k], &Shares_E[i][k]);
-                poly_reduce(&Bij[i][k]);
-            }
-        }
-    }
-
-    // Clear temporary sharing polynomials
-    poly_1d_clear((poly *)P_coeff_S, THRESHOLD * LHAT * M);
-    poly_1d_clear((poly *)P_coeff_E, THRESHOLD * KHAT * M);
-    free(P_coeff_S);
-    free(P_coeff_E);
-    poly_1d_clear(Shares_S, LHAT * M);
-    poly_1d_clear(Shares_E, KHAT * M);
-    free(Shares_S);
-    free(Shares_E);
-    poly_1d_clear(Bij, KHAT * M);
-    free(Bij);
-}
-
-// Run for each user
-void dk_gen_3_step(
-    poly (*Bj)[M],  // [KHAT][M]
-    poly (*Sij)[M], // [LHAT][M]
-    poly (*Be)[M],  // [KHAT][M]
-    poly (*Sei)[M]) // [LHAT][M]
-{
-    // Compute Be = sum_i Bj[i]
-    for (int j = 0; j < KHAT; j++)
-    {
-        for (int k = 0; k < M; k++)
-        {
-            poly_add(&Be[j][k], &Be[j][k], &Bj[j][k]);
-            poly_reduce(&Be[j][k]);
-        }
-    }
-
-    // Compute Sei = sum_i Sij[i]
-    for (int j = 0; j < LHAT; j++)
-    {
-        for (int k = 0; k < M; k++)
-        {
-            poly_add(&Sei[j][k], &Sei[j][k], &Sij[j][k]);
-            poly_reduce(&Sei[j][k]);
-        }
-    }
 }
 
 void dk_gen_3(
