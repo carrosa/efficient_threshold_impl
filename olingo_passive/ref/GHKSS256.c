@@ -1097,7 +1097,7 @@ void as_sign_comb(
     free(t);
 }
 
-int as_verify_old(
+int as_verify_sig(
     sig_t *sig,
     pks_t *pks,
     poly *mu,

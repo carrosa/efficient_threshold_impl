@@ -9,70 +9,7 @@
 
 #define CPU_FREQ 2600000000 // in Hz
 
-typedef struct
-{
-    int64_t keygen_e_1d;
-    int64_t dk_gen_1;
-    int64_t dk_gen_2;
-    int64_t dk_gen_3;
-    int64_t as_keygen_1;
-    int64_t as_keygen_2;
-    int64_t as_sign_1;
-    int64_t as_sign_2;
-    int64_t as_sign_3;
-    int64_t as_verify;
-} timing_results_t;
 
-void print_avg_timing_struct(timing_results_t *timings, int count)
-{
-    int64_t total_keygen_e_1d = 0;
-    int64_t total_dk_gen_1 = 0;
-    int64_t total_dk_gen_2 = 0;
-    int64_t total_dk_gen_3 = 0;
-    int64_t total_as_keygen_1 = 0;
-    int64_t total_as_keygen_2 = 0;
-    int64_t total_as_sign_1 = 0;
-    int64_t total_as_sign_2 = 0;
-    int64_t total_as_sign_3 = 0;
-    int64_t total_as_verify = 0;
-
-    for (int i = 0; i < count; i++)
-    {
-        total_keygen_e_1d += timings[i].keygen_e_1d;
-        total_dk_gen_1 += timings[i].dk_gen_1;
-        total_dk_gen_2 += timings[i].dk_gen_2;
-        total_dk_gen_3 += timings[i].dk_gen_3;
-        total_as_keygen_1 += timings[i].as_keygen_1;
-        total_as_keygen_2 += timings[i].as_keygen_2;
-        total_as_sign_1 += timings[i].as_sign_1;
-        total_as_sign_2 += timings[i].as_sign_2;
-        total_as_sign_3 += timings[i].as_sign_3;
-        total_as_verify += timings[i].as_verify;
-    }
-
-#define AVG(label, total)                                                      \
-    do                                                                         \
-    {                                                                          \
-        double avg_cycles = (double)(total) / count;                           \
-        double avg_seconds = avg_cycles / CPU_FREQ;                            \
-        double avg_ms = avg_seconds * 1000.0;                                  \
-        printf("%-16s: %10.3f ms (%10.6f sec)\n", label, avg_ms, avg_seconds); \
-    } while (0)
-
-    printf("\n--- Average Benchmark Timings (%d runs) ---\n", count);
-    AVG("keygen_e_1d", total_keygen_e_1d);
-    AVG("dk_gen_1", total_dk_gen_1);
-    AVG("dk_gen_2", total_dk_gen_2);
-    AVG("dk_gen_3", total_dk_gen_3);
-    AVG("as_keygen_1", total_as_keygen_1);
-    AVG("as_keygen_2", total_as_keygen_2);
-    AVG("as_sign_1", total_as_sign_1);
-    AVG("as_sign_2", total_as_sign_2);
-    AVG("as_sign_3", total_as_sign_3);
-    AVG("as_verify", total_as_verify);
-
-#undef AVG
-}
 
 void print_timing(uint64_t start, uint64_t end, const char *label)
 {
@@ -122,8 +59,6 @@ void dummy_poly_w(poly *p)
 void benchmark()
 {
 
-    int num_timings = 1;
-    timing_results_t timings[num_timings];
     int32_t users[USERS];
     for (int i = 0; i < USERS; i++)
     {
@@ -209,13 +144,11 @@ void benchmark()
     start = get_cycles();
     as_keygen_1(pks->A, pke->A, pke->B, si[0], yi[0], h_yi[0], &ctx_si[0]);
     end = get_cycles();
-    timings[0].as_keygen_1 = end - start;
 
     printf("as_keygen_2\n");
     start = get_cycles();
     as_keygen_2(&ctx_s, yi, h_yi, ctx_si, pks->yprime);
     end = get_cycles();
-    timings[0].as_keygen_2 = end - start;
 
     poly_1d_clear((poly *)si, USERS * L);
     free(si);
@@ -356,7 +289,7 @@ void benchmark()
     free(wprime);
 
     start = get_cycles();
-    as_verify_old(&sig, pks, mu, Bz);
+    as_verify_sig(&sig, pks, mu, Bz);
     end = get_cycles();
     print_timing(start, end, "as_sign_verify");
 
